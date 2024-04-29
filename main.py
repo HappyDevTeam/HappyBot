@@ -1,7 +1,10 @@
 from typing import Final
 import os
 from dotenv import load_dotenv
-from discord import Intents, Client, Message
+import discord
+from discord import Intents, Message
+from discord.ext import commands
+
 from responses import get_response
 
 load_dotenv()
@@ -9,7 +12,7 @@ TOKEN: Final[str] = os.getenv('DISCORD_TOKEN')
 
 intents: Intents = Intents.default()
 intents.message_content = True
-client: Client = Client(intents=intents)
+bot = commands.Bot(command_prefix="$", intents = intents)
 
 async def send_message(message: Message, user_message: str) -> None:
     if not user_message:
@@ -25,13 +28,13 @@ async def send_message(message: Message, user_message: str) -> None:
     except Exception as e:
         print(e)
 
-@client.event
+@bot.event
 async def on_ready() -> None:
-    print(f'{client.user} is now running!')
+    print(f'{bot.user} is now running!')
 
-@client.event
+@bot.event
 async def on_message(message: Message) -> None:
-    if message.author == client.user:
+    if message.author == bot.user:
         return
     username: str = str(message.author)
     user_message: str = message.content
@@ -40,8 +43,27 @@ async def on_message(message: Message) -> None:
     print(f'[{channel}] {username}: "{user_message}"')
     await send_message(message, user_message)
 
+@bot.event
+async def on_ready():
+    print("Bot is Up")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
+    
+@bot.hybrid_command(name="sync")
+async def hello(ctx: commands.Context):
+    await ctx.send("Syncing...")
+    await bot.tree.sync(guild = ctx.guild)
+    await ctx.send("Synced!")
+
+@bot.hybrid_command(name="hello")
+async def hello(ctx: commands.Context):
+    await ctx.send(f"Hi {ctx.author.name} test", ephemeral=True)
+
 def main() -> None:
-    client.run(token=TOKEN)
+    bot.run(TOKEN)
 
 if __name__ == '__main__':
     main()
