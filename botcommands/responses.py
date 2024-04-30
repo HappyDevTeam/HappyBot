@@ -1,24 +1,28 @@
 from discord.ext import commands
-from random import choice, randint
+import botcommands
+
 
 def get_response(user_input: str) -> str:
     lowered: str = user_input.lower()
 
-    if lowered =='':
+    if lowered == '':
         return 'Well, you\'re awfully silent...'
     elif 'hello' in lowered:
         return 'Hello there!'
+
 
 def sync_curry(bot):
     @commands.hybrid_command(name="sync")
     async def sync(ctx: commands.Context):
         try:
             await ctx.send("Syncing...")
-            await bot.tree.sync(guild = ctx.guild)
+            await bot.tree.sync(guild=ctx.guild)
             await ctx.send("Synced!")
         except Exception as e:
             print(e)
+
     return sync
+
 
 @commands.hybrid_command(name="hello")
 async def hello(ctx: commands.Context):
