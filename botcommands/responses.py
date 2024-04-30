@@ -11,7 +11,7 @@ def get_response(user_input: str) -> str:
         return 'Hello there!'
 
 
-def sync_curry(bot):
+def sync_curry(bot: commands.Bot):
     @commands.hybrid_command(name="sync")
     async def sync(ctx: commands.Context):
         try:

@@ -19,7 +19,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="$", intents = intents)
 
 async def send_message(message: Message, user_message: str) -> None:
-    if not user_message:
+    if user_message is None:
         print('(Message empty because intents not enabled)')
         return
 
@@ -27,18 +27,20 @@ async def send_message(message: Message, user_message: str) -> None:
         user_message = user_message[1:]
 
     response: str = get_response(user_message)
-    if response == '':
+    if response is None:
         return
     try:
-        if is_private:
+        if is_private and message is not None:
             await message.author.send(response)
         else:
             await message.channel.send(response)
     except Exception as e:
-        print(e)
+        print("send_message: ", e)
 
 @bot.event
 async def on_message(message: Message) -> None:
+    if message is None:
+        return "this should be impossible"
     if message.author == bot.user:
         return
     username: str = str(message.author)
@@ -48,8 +50,9 @@ async def on_message(message: Message) -> None:
     print(f'[{channel}] {username}: "{user_message}"')
     await send_message(message, user_message)
 
+
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     print("Bot is Up")
     for extension in CMDS_DIR.glob("*.py"):
         await bot.load_extension(f"botcommands.{extension.name[:-3]}")
@@ -59,8 +62,5 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-def main() -> None:
-    bot.run(TOKEN)
-
 if __name__ == '__main__':
-    main()
+    bot.run(TOKEN)
