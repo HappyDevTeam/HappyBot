@@ -22,15 +22,16 @@ async def send_message(message: Message, user_message: str) -> None:
     if is_private := user_message[0] == '?':
         user_message = user_message[1:]
         
+    response: str = get_response(user_message)
+    if response == '':
+        return
     try:
-        response: str = get_response(user_message)
-        await message.author.send(response) if is_private else await message.channel.send(response)
+        if is_private:
+            await message.author.send(response)
+        else:
+            await message.channel.send(response)
     except Exception as e:
         print(e)
-
-@bot.event
-async def on_ready() -> None:
-    print(f'{bot.user} is now running!')
 
 @bot.event
 async def on_message(message: Message) -> None:
@@ -46,21 +47,12 @@ async def on_message(message: Message) -> None:
 @bot.event
 async def on_ready():
     print("Bot is Up")
+    await bot.load_extension("responses")
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
-    
-@bot.hybrid_command(name="sync")
-async def hello(ctx: commands.Context):
-    await ctx.send("Syncing...")
-    await bot.tree.sync(guild = ctx.guild)
-    await ctx.send("Synced!")
-
-@bot.hybrid_command(name="hello")
-async def hello(ctx: commands.Context):
-    await ctx.send(f"Hi {ctx.author.name} test", ephemeral=True)
 
 def main() -> None:
     bot.run(TOKEN)
