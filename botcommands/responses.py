@@ -9,14 +9,16 @@ def get_response(user_input: str) -> str:
     elif 'hello' in lowered:
         return 'Hello there!'
 
-@commands.hybrid_command(name="sync")
-async def sync(ctx: commands.Context):
-    try:
-        await ctx.send("Syncing...")
-        await commands.tree.sync(guild = ctx.guild)
-        await ctx.send("Synced!")
-    except Exception as e:
-        print(e)
+def sync_curry(bot):
+    @commands.hybrid_command(name="sync")
+    async def sync(ctx: commands.Context):
+        try:
+            await ctx.send("Syncing...")
+            await bot.tree.sync(guild = ctx.guild)
+            await ctx.send("Synced!")
+        except Exception as e:
+            print(e)
+    return sync
 
 @commands.hybrid_command(name="hello")
 async def hello(ctx: commands.Context):
@@ -26,5 +28,5 @@ async def hello(ctx: commands.Context):
         print(e)
 
 async def setup(bot: commands.Bot):
-    bot.add_command(sync)
+    bot.add_command(sync_curry(bot))
     bot.add_command(hello)
