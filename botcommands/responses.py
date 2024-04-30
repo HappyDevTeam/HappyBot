@@ -31,6 +31,7 @@ async def hello(ctx: commands.Context):
     except Exception as e:
         print(e)
 
+
 async def setup(bot: commands.Bot):
     bot.add_command(sync_curry(bot))
     bot.add_command(hello)
