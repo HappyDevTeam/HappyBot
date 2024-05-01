@@ -1,5 +1,7 @@
+from typing import Any, Coroutine, Never, Callable
 from discord.ext import commands
-from google.cloud import translate_v2 as translator
+from discord.ext.commands import Context
+from google.cloud import translate_v2 as translator # type: ignore
 
 
 def translate_text(target: str, text: str) -> dict:
@@ -19,12 +21,11 @@ def translate_text(target: str, text: str) -> dict:
 
     return result
 
-
 @commands.hybrid_command(name="translate")
-async def translate(ctx, lang, text) -> str:
+async def translate(ctx: commands.Context, lang: str, text: str) -> None:
     result = translate_text(lang, text)
     await ctx.send(result["translatedText"])
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot) -> None:
     bot.add_command(translate)
