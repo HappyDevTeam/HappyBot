@@ -55,6 +55,8 @@ async def on_message(message: Message) -> None:
 async def on_ready() -> None:
     print("Bot is Up")
     for extension in CMDS_DIR.glob("*.py"):
+        if extension.name == "__init__.py":
+            continue
         await bot.load_extension(f"botcommands.{extension.name[:-3]}")
     try:
         synced = await bot.tree.sync()
