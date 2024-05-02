@@ -44,14 +44,14 @@ translate_group = app_commands.Group(name="translate", description="Translate te
 
 
 @translate_group.command(name="text", description="Translate Text to a Desired Language!")
-async def translate(interaction: discord.Interaction, lang: str, text: str) -> str:
+async def translate(interaction: discord.Interaction, lang: str, text: str) -> None:
 
     result = translate_text(lang, text)
     await interaction.response.send_message(result["translatedText"])
 
 
 @translate_group.command(name="random", description="Translate a text through many languages!")
-async def translate_random(interaction: discord.Interaction, text: str) -> str:
+async def translate_random(interaction: discord.Interaction, text: str) -> None:
     translated_text = random_translate(text)
     await interaction.response.send_message(f"Original Text: {text}\n"
                                             f"Translated Text: {translated_text}")

@@ -1,0 +1,1 @@
+pip install -r packages.txt -U && pyright . && python main.py
