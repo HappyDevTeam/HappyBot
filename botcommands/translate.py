@@ -45,6 +45,7 @@ translate_group = app_commands.Group(name="translate", description="Translate te
 
 @translate_group.command(name="text", description="Translate Text to a Desired Language!")
 async def translate(interaction: discord.Interaction, lang: str, text: str) -> str:
+
     result = translate_text(lang, text)
     await interaction.response.send_message(result["translatedText"])
 

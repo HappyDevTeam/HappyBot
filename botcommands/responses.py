@@ -1,8 +1,7 @@
 from discord.ext import commands
 from botcommands import translate
 
-
-def get_response(user_input: str) -> str:
+def get_response(user_input: str) -> str | None:
     lowered: str = user_input.lower()
 
     if not translate.is_english(user_input):
@@ -14,9 +13,11 @@ def get_response(user_input: str) -> str:
         return 'Well, you\'re awfully silent...'
     elif 'hello' in lowered:
         return 'Hello there!'
+    else:
+        return None
 
 
-def sync_curry(bot):
+def sync_curry(bot: commands.Bot):
     @commands.hybrid_command(name="sync")
     async def sync(ctx: commands.Context):
         try:
