@@ -1,31 +1,61 @@
-from typing import Any, Coroutine, Never, Callable
+import discord
+from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands import Context
-from google.cloud import translate_v2 as translator # type: ignore
+from google.cloud import translate_v2 as translator
+import random
+
+translator_client = translator.Client()
+langs = translator_client.get_languages()
 
 
-def translate_text(target: str, text: str) -> dict:
-
-    translate_client = translator.Client()
-
+def is_english(text: str) -> bool:
     if isinstance(text, bytes):
         text = text.decode("utf-8")
 
-    # Text can also be a sequence of strings, in which case this method
-    # will return a sequence of results for each text.
-    result = translate_client.translate(text, target_language=target)
+    detected_language = translator_client.detect_language(text)["language"]
+    english_language = list(filter(lambda lang: lang['name'] == 'English', langs))[0]["language"]
 
-    print("Text: {}".format(result["input"]))
-    print("Translation: {}".format(result["translatedText"]))
-    print("Detected source language: {}".format(result["detectedSourceLanguage"]))
+    return detected_language == english_language
+
+
+def translate_text(lang: str, text: str) -> dict:
+    if isinstance(text, bytes):
+        text = text.decode("utf-8")
+
+    result = translator_client.translate(text, target_language=lang)
 
     return result
 
-@commands.hybrid_command(name="translate")
-async def translate(ctx: commands.Context, lang: str, text: str) -> None:
+
+def random_translate(text: str) -> str:
+    for i in range(0, 10):
+
+        if isinstance(text, bytes):
+            text = text.decode("utf-8")
+
+        nextLang = random.randint(0, len(langs))
+        result = translator_client.translate(text, target_language=langs[nextLang]["language"])
+        text = result["translatedText"]
+
+    return text
+
+
+translate_group = app_commands.Group(name="translate", description="Translate texts.")
+
+
+@translate_group.command(name="text", description="Translate Text to a Desired Language!")
+async def translate(interaction: discord.Interaction, lang: str, text: str) -> str:
+
     result = translate_text(lang, text)
-    await ctx.send(result["translatedText"])
+    await interaction.response.send_message(result["translatedText"])
 
 
-async def setup(bot: commands.Bot) -> None:
-    bot.add_command(translate)
+@translate_group.command(name="random", description="Translate a text through many languages!")
+async def translate_random(interaction: discord.Interaction, text: str) -> str:
+    translated_text = random_translate(text)
+    await interaction.response.send_message(f"Original Text: {text}\n"
+                                            f"Translated Text: {translated_text}")
+
+
+async def setup(bot: commands.Bot):
+    bot.tree.add_command(translate_group)
