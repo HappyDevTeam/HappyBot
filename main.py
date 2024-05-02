@@ -1,7 +1,6 @@
 from typing import Final, Union
 import os
 from dotenv import load_dotenv
-import discord
 from discord import Intents, Message
 from discord.ext import commands
 import pathlib

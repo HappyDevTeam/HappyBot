@@ -1,6 +1,4 @@
 from discord.ext import commands
-import botcommands
-
 
 def get_response(user_input: str) -> str | None:
     lowered: str = user_input.lower()
