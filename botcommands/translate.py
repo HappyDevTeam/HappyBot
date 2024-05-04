@@ -2,9 +2,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from google.cloud import translate_v2 as translator
+from google.auth.exceptions import DefaultCredentialsError
 import random
 
-translator_client = translator.Client()
+try:
+    translator_client = translator.Client()
+except DefaultCredentialsError as e:
+    print(type(e).__name__, e.args)
+    raise e
 langs = translator_client.get_languages()
 
 

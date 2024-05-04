@@ -56,7 +56,10 @@ async def on_ready() -> None:
     for extension in CMDS_DIR.glob("*.py"):
         if extension.name == "__init__.py":
             continue
-        await bot.load_extension(f"botcommands.{extension.name[:-3]}")
+        try:
+            await bot.load_extension(f"botcommands.{extension.name[:-3]}")
+        except Exception as e:
+            pass
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
