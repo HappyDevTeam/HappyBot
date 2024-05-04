@@ -11,7 +11,7 @@ def get_response(user_input: str) -> str | None:
     lowered: str = user_input.lower()
 
     if translate is not None:
-        if not translate.is_english(user_input):
+        if translate.is_english(user_input) < -0.5:
             translated_text = translate.translate_text("en", user_input)
             return translated_text
 

@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 from google.cloud import translate_v2 as translator
 from google.auth.exceptions import DefaultCredentialsError
+import html
 import random
 
 try:
@@ -12,14 +13,14 @@ except DefaultCredentialsError as e:
 langs = translator_client.get_languages()
 
 
-def is_english(text: str) -> bool:
+def is_english(text: str) -> float:
     if isinstance(text, bytes):
         text = text.decode("utf-8")
 
-    detected_language = translator_client.detect_language(text)["language"]
-    english_language = list(filter(lambda lang: lang['name'] == 'English', langs))[0]["language"]
-
-    return detected_language == english_language
+    classification = translator_client.detect_language(text)
+    if classification['language'] == "en":
+        return classification['confidence']
+    return -classification['confidence']
 
 
 def translate_text(lang: str, text: str) -> str:
@@ -30,7 +31,7 @@ def translate_text(lang: str, text: str) -> str:
 
     result = translator_client.translate(text, target_language=lang)
 
-    return result["translatedText"]
+    return html.unescape(result["translatedText"])
 
 
 def random_translate(text: str) -> str:
