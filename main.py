@@ -59,7 +59,11 @@ async def on_ready() -> None:
         try:
             await bot.load_extension(f"botcommands.{extension.name[:-3]}")
         except Exception as e:
-            pass
+            print()
+            print(f"Could not load extension {extension.name[:-3]}")
+            print("Type: ", type(e).__name__)
+            print(e.args)
+            print()
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")

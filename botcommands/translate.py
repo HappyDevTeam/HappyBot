@@ -8,7 +8,6 @@ import random
 try:
     translator_client = translator.Client()
 except DefaultCredentialsError as e:
-    print(type(e).__name__, e.args)
     raise e
 langs = translator_client.get_languages()
 
