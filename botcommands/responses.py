@@ -12,9 +12,8 @@ def get_response(user_input: str) -> str | None:
 
     if translate is not None:
         if not translate.is_english(user_input):
-            en_code = list(filter(lambda lang: lang['name'] == 'English', translate.langs))[0]["language"]
-            translated_text = translate.translate_text(en_code, user_input)
-            return translated_text["translatedText"]
+            translated_text = translate.translate_text("en", user_input)
+            return translated_text
 
     if lowered == '':
         return 'Well, you\'re awfully silent...'

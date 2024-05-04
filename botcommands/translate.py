@@ -22,13 +22,15 @@ def is_english(text: str) -> bool:
     return detected_language == english_language
 
 
-def translate_text(lang: str, text: str) -> dict:
+def translate_text(lang: str, text: str) -> str:
+    if lang not in [lang['language'] for lang in langs]:
+        return "Invalid language code"
     if isinstance(text, bytes):
         text = text.decode("utf-8")
 
     result = translator_client.translate(text, target_language=lang)
 
-    return result
+    return result["translatedText"]
 
 
 def random_translate(text: str) -> str:
@@ -51,7 +53,7 @@ translate_group = app_commands.Group(name="translate", description="Translate te
 async def translate(interaction: discord.Interaction, lang: str, text: str) -> None:
 
     result = translate_text(lang, text)
-    await interaction.response.send_message(result["translatedText"])
+    await interaction.response.send_message(result)
 
 
 @translate_group.command(name="random", description="Translate a text through many languages!")
