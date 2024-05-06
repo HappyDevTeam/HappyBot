@@ -2,16 +2,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from google.cloud import translate_v2 as translator
-from google.auth.exceptions import DefaultCredentialsError
 import html
 import random
 
 try:
     translator_client = translator.Client()
-except DefaultCredentialsError as e:
+    langs = translator_client.get_languages()
+except Exception as e:
     raise e
-langs = translator_client.get_languages()
-
 
 def is_english(text: str) -> float:
     if isinstance(text, bytes):

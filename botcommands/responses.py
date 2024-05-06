@@ -1,27 +1,4 @@
 from discord.ext import commands
-from google.auth.exceptions import DefaultCredentialsError
-try:
-    from botcommands import translate
-except DefaultCredentialsError as e:
-    translate = None
-except Exception as e:
-    raise e
-
-def get_response(user_input: str) -> str | None:
-    lowered: str = user_input.lower()
-
-    if translate is not None:
-        if translate.is_english(user_input) < -0.8:
-            translated_text = translate.translate_text("en", user_input)
-            return translated_text
-
-    if lowered == '':
-        return 'Well, you\'re awfully silent...'
-    elif 'hello' in lowered:
-        return 'Hello there!'
-    else:
-        return None
-
 
 def sync_curry(bot: commands.Bot):
     @commands.hybrid_command(name="sync")
