@@ -2,29 +2,34 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from google.cloud import translate_v2 as translator
+import html
 import random
 
-translator_client = translator.Client()
-langs = translator_client.get_languages()
+try:
+    translator_client = translator.Client()
+    langs = translator_client.get_languages()
+except Exception as e:
+    raise e
 
-
-def is_english(text: str) -> bool:
+def is_english(text: str) -> float:
     if isinstance(text, bytes):
         text = text.decode("utf-8")
 
-    detected_language = translator_client.detect_language(text)["language"]
-    english_language = list(filter(lambda lang: lang['name'] == 'English', langs))[0]["language"]
+    classification = translator_client.detect_language(text)
+    if classification['language'] == "en":
+        return classification['confidence']
+    return -classification['confidence']
 
-    return detected_language == english_language
 
-
-def translate_text(lang: str, text: str) -> dict:
+def translate_text(lang: str, text: str) -> str:
+    if lang not in [lang['language'] for lang in langs]:
+        return "Invalid language code"
     if isinstance(text, bytes):
         text = text.decode("utf-8")
 
     result = translator_client.translate(text, target_language=lang)
 
-    return result
+    return html.unescape(result["translatedText"])
 
 
 def random_translate(text: str) -> str:
@@ -47,7 +52,7 @@ translate_group = app_commands.Group(name="translate", description="Translate te
 async def translate(interaction: discord.Interaction, lang: str, text: str) -> None:
 
     result = translate_text(lang, text)
-    await interaction.response.send_message(result["translatedText"])
+    await interaction.response.send_message(result)
 
 
 @translate_group.command(name="random", description="Translate a text through many languages!")
