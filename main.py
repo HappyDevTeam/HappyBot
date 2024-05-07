@@ -17,8 +17,7 @@ CMDS_DIR = CURRENT_DIR / "botcommands"
 load_dotenv()
 TOKEN: Final[str | None] = os.getenv('DISCORD_TOKEN')
 
-intents: Intents = Intents.default()
-intents.message_content = True
+intents: Intents = Intents.all()
 bot = commands.Bot(command_prefix="$", intents = intents)
 
 
