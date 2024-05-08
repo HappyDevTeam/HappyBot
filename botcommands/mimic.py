@@ -1,95 +1,102 @@
 import discord
 from discord.ext import commands
-import typing
-import tensorflow as tf
+
+from typing import Any
+from numpy.typing import NDArray
+
 import numpy as np
-import keras
+
+from sklearn.preprocessing import LabelEncoder
+from keras.api.layers import TextVectorization
+from keras.api.utils import to_categorical
+from keras._tf_keras.keras.preprocessing.text import Tokenizer
+from keras.api.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
+import tensorflow as tf
+from keras.api.models import Sequential
+from keras.api.layers import Dense
+from keras.api.layers import Embedding
+from keras.api.layers import Flatten
+from keras.api.optimizers import SGD
 
 
 class Mimic():
-    model: keras.models.Sequential
-    mean: np.floating[typing.Any]
-    std: np.floating[typing.Any]
+    model: Sequential
+    classes: Any
 
-    def __init__(self, x: list[str], y_i: list[int]):
-        self.mean = np.mean(y_i)
-        self.std = np.std(y_i)
-        y = y_i
+    @staticmethod
+    def preprocessfeatures(x: list[str]):
+        tokenizer = Tokenizer(num_words=300, filters=' ', oov_token='UNK')
+        tokenizer.fit_on_texts(x)
+        x_full = tokenizer.texts_to_sequences(x)
+        x_full = pad_sequences(x_full, maxlen=200, padding='post')
+        return x_full
 
-        vocab_size = 10000
-        sequence_length = 20
-        vectorize_layer = keras.layers.TextVectorization(
-            max_tokens=vocab_size,
-            output_mode='int',
-            output_sequence_length=sequence_length
-        )
-        vectorize_layer.adapt(x)
+    @staticmethod
+    def preprocesslabels(y: list[str]):
+        le = LabelEncoder()
+        le.fit(y)
+        num_classes = le.classes_.size  # type: ignore
+        y_full = le.transform(y)
+        y_full = to_categorical(y_full)
+        return y_full, le.classes_, num_classes
 
-        # print(x)
+    @staticmethod
+    def makeModel(x: list[str], y: list[str]):
+        print(x, y)
+        x_full = Mimic.preprocessfeatures(x)
+        y_full, Mimic.classes, num_classes = Mimic.preprocesslabels(y)
+        print(y_full)
         x_train, x_test, y_train, y_test = train_test_split(
-            x, y, test_size=0.2)
+            x_full, y_full, train_size=0.8)
         x_train = tf.convert_to_tensor(x_train)
         y_train = tf.convert_to_tensor(y_train)
         x_test = tf.convert_to_tensor(x_test)
         y_test = tf.convert_to_tensor(y_test)
-        print(x_train, x_test, y_train, y_test)
+        print(x_train, x_test, y_train, y_test, sep="\n")
 
-        print("Creating model")
-        embedding_dim = 16
-        self.model = keras.models.Sequential([
-            vectorize_layer,
-            keras.layers.Embedding(
-                vocab_size, embedding_dim, name="embedding"),
-            keras.layers.GlobalAveragePooling1D(),
-            keras.layers.Dense(8, activation='relu'),
-            keras.layers.Dense(5, activation='relu'),
-            keras.layers.Dense(1)
+        vocab_size = 1000
+        embedding_dim = 30
+        Mimic.model = Sequential([
+            Embedding(
+                vocab_size, embedding_dim, trainable=True),
+            Dense(512, activation='relu'),
+            Flatten(),
+            Dense(512, activation='relu'),
+            Dense(num_classes, activation='sigmoid'),
         ])
+        opt = SGD(learning_rate=0.000001)
+        Mimic.model.compile(loss="categorical_crossentropy",
+                    optimizer="adam", metrics=['accuracy'])
 
-        print("Compiling")
-        self.model.compile(
-            optimizer='adam',
-            loss=keras.losses.BinaryCrossentropy(from_logits=True),
-            metrics=['accuracy']
-        )
+        # es = EarlyStopping(monitor='loss', min_delta=0.005, patience=1, verbose=1, mode='auto')
+        Mimic.model.fit(x_train, y_train, epochs=30,
+                shuffle=True, batch_size=30, verbose=2)#type: ignore
 
-        print("Fitting")
-        tensorboard_callback = keras.callbacks.TensorBoard(log_dir="logs")
-        self.model.fit(x_train, y_train, epochs=25,
-                       callbacks=[tensorboard_callback])
-        self.model.summary()
-
-mimic = None
+        scores = Mimic.model.evaluate(x_test, y_test)
+        print(Mimic.model.metrics_names[0], Mimic.model.metrics_names[1])
 
 
 @commands.hybrid_command(name="train")
 async def train(ctx: commands.Context) -> None:
     messages = [message async for message in ctx.channel.history(limit=200) if not message.author.bot]
-    # for message in messages: print(message.author, ": ", message.content)
     x = [message.content for message in messages]
-    y = [message.author.id for message in messages]
-    global mimic
-    mimic = Mimic(x, y)
-
+    y = [str(message.author.id) for message in messages]
+    Mimic.makeModel(x, y)
     await ctx.message.channel.send("Trained model!")
 
 
 @commands.hybrid_command(name="evaluate")
 async def evaluate(ctx: commands.Context, text: str) -> None:
-    if mimic is None:
+    if Mimic.model is None:
         await ctx.message.channel.send("No model found.")
-    assert(isinstance(mimic, Mimic))
-    predictions = mimic.model.predict(tf.convert_to_tensor(list(text)))
+    print(text)
+    predictions = Mimic.model.predict(Mimic.preprocessfeatures([text]))
+    print(Mimic.model)
     print(predictions)
-    predictions = [prediction * mimic.std + mimic.mean for prediction in predictions]
-    print(predictions)
-    response = np.mean(predictions)
-    assert(isinstance(ctx.guild, discord.Guild))
-    ids = set([member.id for member in ctx.guild.members])
-    closestId: int = min(ids, key=lambda x: abs(x - int(response)))
-    print(response, closestId)
-    closestUser: discord.User = await commands.UserConverter().convert(ctx, str(closestId))
+    closestGlobalName = Mimic.classes[np.argmax(predictions, axis=1)][0]
+    print(closestGlobalName)
+    closestUser: discord.User = await commands.UserConverter().convert(ctx, closestGlobalName)
     await ctx.message.channel.send(closestUser.display_name + " would say '" + text + "'")
 
 
