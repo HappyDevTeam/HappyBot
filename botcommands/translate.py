@@ -14,6 +14,8 @@ except Exception as e:
 
 async def on_message(message: Message) -> None:
     user_input = message.content
+    if message.author.bot:
+        return
     if is_english(user_input) < -0.9:
         translated_text = translate_text("en", user_input)
         await message.channel.send(translated_text)
