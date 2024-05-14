@@ -39,7 +39,7 @@ async def snipeGeneral(ctx: commands.Context, member: Member, data: dict):
         return
     message: Message = data[key]
     embed = Embed(
-        title="Sniping edit" + str(member.display_name),
+        title="Sniping " + str(member.display_name),
         description=message.content,
         timestamp=message.created_at
     )
