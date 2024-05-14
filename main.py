@@ -44,19 +44,10 @@ async def send_message(message: Message, user_message: str) -> None:
         return
     if user_message is None:
         return
-    if is_private := user_message[0] == '?':
-        user_message = user_message[1:]
-
     response: str | None = get_response(user_message)
     if response is None or message is None:
         return
-    try:
-        if is_private:
-            await message.author.send(response)
-        else:
-            await message.channel.send(response)
-    except Exception as e:
-        print("send_message: ", e)
+    await message.author.send(response)
 
 
 @bot.event
