@@ -38,15 +38,20 @@ async def snipeGeneral(ctx: commands.Context, member: Member, data: dict):
         await ctx.send("No message found.")
         return
     message: Message = data[key]
-    embed = Embed(
+    contentEmbed = Embed(
         title="Sniping " + str(member.display_name),
         description=message.content,
         timestamp=message.created_at
     )
-    embed.set_footer(text=message.channel.name)
-    embed.set_author(name=member.display_name,
+    contentEmbed.set_footer(text=message.channel.name)
+    contentEmbed.set_author(name=member.display_name,
                      icon_url=member.display_avatar)
-    await ctx.send(embed=embed)
+
+    await ctx.send(embed=contentEmbed)
+    for embed in message.embeds:
+        await ctx.send(embed.url)
+    for attachment in message.attachments:
+        await ctx.send(attachment.url)
 
 
 async def setup(bot: commands.Bot):
