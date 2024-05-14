@@ -30,13 +30,6 @@ def get_response(user_input: str) -> str | None:
             translated_text = translate.translate_text("en", user_input)
             return translated_text
 
-    if lowered == '':
-        return 'Well, you\'re awfully silent...'
-    elif 'hello' in lowered:
-        return 'Hello there!'
-    else:
-        return None
-
 
 async def send_message(message: Message, user_message: str) -> None:
     if user_message is None:
