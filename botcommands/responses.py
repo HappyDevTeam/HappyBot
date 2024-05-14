@@ -12,9 +12,7 @@ async def hello(ctx: commands.Context):
 
 def get_response(user_input: str) -> str | None:
     lowered: str = user_input.lower()
-    if lowered == '':
-        return 'Well, you\'re awfully silent...'
-    elif 'hello' in lowered:
+    if lowered == 'Hello World!':
         return 'Hello there!'
     else:
         return None
