@@ -19,7 +19,7 @@ TOKEN: Final[str | None] = os.getenv('DISCORD_TOKEN')
 
 intents: Intents = Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="$", intents = intents)
+bot = commands.Bot(command_prefix="$", intents=intents)
 
 
 def get_response(user_input: str) -> str | None:
@@ -36,6 +36,7 @@ def get_response(user_input: str) -> str | None:
         return 'Hello there!'
     else:
         return None
+
 
 async def send_message(message: Message, user_message: str) -> None:
     if user_message is None:
@@ -56,6 +57,7 @@ async def send_message(message: Message, user_message: str) -> None:
     except Exception as e:
         print("send_message: ", e)
 
+
 @bot.event
 async def on_message(message: Message) -> None:
     if message is None:
@@ -65,7 +67,7 @@ async def on_message(message: Message) -> None:
     username: str = str(message.author)
     user_message: str = message.content
     channel: str = str(message.channel)
-    
+
     print(f'[{channel}] {username}: "{user_message}"')
     await send_message(message, user_message)
 
