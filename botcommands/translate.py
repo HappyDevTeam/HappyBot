@@ -12,11 +12,11 @@ try:
 except Exception as e:
     raise e
 
-async def on_message(message: Message):
+async def on_message(message: Message) -> None:
     user_input = message.content
     if is_english(user_input) < -0.9:
         translated_text = translate_text("en", user_input)
-        return translated_text
+        await message.channel.send(translated_text)
 
 def is_english(text: str) -> float:
     if isinstance(text, bytes):
