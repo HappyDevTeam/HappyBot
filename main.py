@@ -47,7 +47,7 @@ async def send_message(message: Message, user_message: str) -> None:
     response: str | None = get_response(user_message)
     if response is None or message is None:
         return
-    await message.author.send(response)
+    await message.channel.send(response)
 
 
 @bot.event
