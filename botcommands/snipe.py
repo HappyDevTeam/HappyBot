@@ -43,7 +43,7 @@ async def snipeGeneral(ctx: commands.Context, member: Member, data: dict):
         description=message.content,
         timestamp=message.created_at
     )
-    contentEmbed.set_footer(text=message.channel.name)
+    contentEmbed.set_footer(text=message.channel.name) #type: ignore
     contentEmbed.set_author(name=member.display_name,
                      icon_url=member.display_avatar)
 

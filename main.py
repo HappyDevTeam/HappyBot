@@ -1,4 +1,5 @@
 from typing import Final, Union
+import atexit
 import os
 from dotenv import load_dotenv
 from discord import Intents, Message
@@ -50,3 +51,8 @@ async def sync(ctx: commands.Context):
 if __name__ == '__main__':
     assert isinstance(TOKEN, str)
     bot.run(TOKEN)
+
+def exit_handler():
+    print('\n\n\nBot shutting down')
+
+atexit.register(exit_handler)
