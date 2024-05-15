@@ -2,6 +2,4 @@
 __pycache__/
 .vscode/
 logs/
-botsettings/*
-!botsettings/
 .env
