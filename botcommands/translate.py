@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from google.cloud import translate_v2 as translator
+from discord import Message
 import html
 import random
 
@@ -10,6 +11,14 @@ try:
     langs = translator_client.get_languages()
 except Exception as e:
     raise e
+
+async def on_message(message: Message) -> None:
+    user_input = message.content
+    if message.author.bot:
+        return
+    if is_english(user_input) < -0.9:
+        translated_text = translate_text("en", user_input)
+        await message.channel.send(translated_text)
 
 def is_english(text: str) -> float:
     if isinstance(text, bytes):
@@ -64,3 +73,4 @@ async def translate_random(interaction: discord.Interaction, text: str) -> None:
 
 async def setup(bot: commands.Bot):
     bot.tree.add_command(translate_group)
+    bot.add_listener(on_message)
