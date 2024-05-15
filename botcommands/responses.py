@@ -3,8 +3,10 @@ from discord import Message
 import json
 from json.decoder import JSONDecodeError
 from io import TextIOWrapper
+import os
 
 autoreplyPath = './botsettings/autoreply.json'
+openmode = 'r+' if os.path.exists(autoreplyPath) else 'w'
 autoreplyFile: TextIOWrapper = open(autoreplyPath, 'r+', encoding='utf-8')
 try:
     autoreply = json.load(autoreplyFile)
