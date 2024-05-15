@@ -18,7 +18,7 @@ async def on_message(message: Message) -> None:
         return
     if is_english(user_input) < -0.9:
         translated_text = translate_text("en", user_input)
-        await message.channel.send(translated_text)
+        await message.reply(translated_text, mention_author=False)
 
 def is_english(text: str) -> float:
     if isinstance(text, bytes):
