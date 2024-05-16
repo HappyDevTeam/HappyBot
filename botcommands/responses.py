@@ -38,7 +38,7 @@ async def delete_reply(ctx: commands.Context, target: str):
 
 
 def get_response(user_input: str) -> str | None:
-    return autoreply.get(user_input, "")
+    return autoreply.get(user_input, None)
 
 
 async def send_message(message: Message, user_message: str) -> None:
