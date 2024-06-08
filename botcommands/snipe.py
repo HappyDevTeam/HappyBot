@@ -1,5 +1,5 @@
+from discord import app_commands
 from discord.ext import commands
-from discord import Client
 from discord import Message
 from discord import Embed
 from discord import Member
@@ -7,9 +7,13 @@ from discord import Member
 snipeDataDeleted = {}
 snipeDataEdited = {}
 
+latestUserDeleted = None
+latestUserEdited = None
 
 async def on_message_delete(message: Message) -> None:
     snipeDataDeleted[str(message.author.id * message.channel.id)] = message
+    global latestUserDeleted
+    latestUserDeleted = message.author
     username = str(message.author)
     channel = str(message.channel)
     print(f'[{channel}] {username}: deleted meessage.')
@@ -17,33 +21,51 @@ async def on_message_delete(message: Message) -> None:
 
 async def on_message_edit(message: Message, after: Message) -> None:
     snipeDataEdited[str(message.author.id * message.channel.id)] = message
+    global latestUserEdited
+    latestUserEdited = message.author
     username = str(message.author)
     channel = str(message.channel)
     print(f'[{channel}] {username}: edited meessage.')
 
-
-@commands.hybrid_command(name="snipe")
-async def snipe(ctx: commands.Context, member: Member):
-    await snipeGeneral(ctx, member, snipeDataDeleted)
+target_group = app_commands.Group(name="target", description="Snipe Specific People.")
 
 
-@commands.hybrid_command(name="snipe_edit")
-async def snipeEdit(ctx: commands.Context, member: Member):
-    await snipeGeneral(ctx, member, snipeDataEdited)
+@target_group.command(name="snipe", description="Target Snipe the Last Deleted Message sent by "
+                                                "Specified User.")
+async def target_snipe(ctx: commands.Context, member: Member):
+    await general_snipe(ctx, member, snipeDataDeleted)
 
 
-async def snipeGeneral(ctx: commands.Context, member: Member, data: dict):
+@target_group.command(name="editsnipe", description="Target Snipe the Last Edited Message sent by "
+                                                    "Specified User.")
+async def target_edit_snipe(ctx: commands.Context, member: Member):
+    await general_snipe(ctx, member, snipeDataEdited)
+
+
+@commands.hybrid_command(name="snipe", description="Snipe the Last Deleted Message.")
+async def snipe(ctx: commands.Context):
+    await general_snipe(ctx, latestUserDeleted, snipeDataDeleted)
+
+
+@commands.hybrid_command(name="editsnipe", description="Snipe the Last Edited Message.")
+async def editsnipe(ctx: commands.Context):
+    await general_snipe(ctx, latestUserEdited, snipeDataEdited)
+
+
+async def general_snipe(ctx: commands.Context, member: Member, data: dict):
+
+    if member is None:
+        await ctx.send("There's nothing to snipe.")
+
     key = str(member.id * ctx.channel.id)
     if key not in data:
-        await ctx.send("No message found.")
+        await ctx.send("There's nothing to snipe.")
         return
     message: Message = data[key]
     contentEmbed = Embed(
-        title="Sniping " + str(member.display_name),
         description=message.content,
         timestamp=message.created_at
     )
-    contentEmbed.set_footer(text=message.channel.name) #type: ignore
     contentEmbed.set_author(name=member.display_name,
                      icon_url=member.display_avatar)
 
@@ -55,7 +77,8 @@ async def snipeGeneral(ctx: commands.Context, member: Member, data: dict):
 
 
 async def setup(bot: commands.Bot):
+    bot.tree.add_command(target_group)
     bot.add_command(snipe)
-    bot.add_command(snipeEdit)
+    bot.add_command(editsnipe)
     bot.add_listener(on_message_delete)
     bot.add_listener(on_message_edit)
