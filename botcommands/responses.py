@@ -1,5 +1,18 @@
 from discord.ext import commands
 from discord import Message
+import json
+from json.decoder import JSONDecodeError
+from io import TextIOWrapper
+import os
+
+autoreplyPath = './botsettings/autoreply.json'
+openmode = 'r+' if os.path.exists(autoreplyPath) else 'w+'
+autoreplyFile: TextIOWrapper = open(autoreplyPath, openmode, encoding='utf-8')
+try:
+    autoreply = json.load(autoreplyFile)
+except JSONDecodeError as e:
+    autoreply = {}
+    print(e)
 
 
 @commands.hybrid_command(name="hello")
@@ -10,12 +23,22 @@ async def hello(ctx: commands.Context):
         print(e)
 
 
+@commands.hybrid_command(name="make_reply")
+async def make_reply(ctx: commands.Context, target: str, response: str):
+    autoreply[target] = response
+    json.dump(autoreply, autoreplyFile, ensure_ascii=False, indent=4)
+    await ctx.reply("Replies to " + target + " with " + autoreply[target])
+
+
+@commands.hybrid_command(name="delete_reply")
+async def delete_reply(ctx: commands.Context, target: str):
+    autoreply.pop(target, None)
+    json.dump(autoreply, autoreplyFile, ensure_ascii=False, indent=4)
+    autoreplyFile.close()
+
+
 def get_response(user_input: str) -> str | None:
-    lowered: str = user_input.lower()
-    if lowered == 'Hello World!':
-        return 'Hello there!'
-    else:
-        return None
+    return autoreply.get(user_input, None)
 
 
 async def send_message(message: Message, user_message: str) -> None:
@@ -44,4 +67,5 @@ async def on_message(message: Message) -> None:
 
 async def setup(bot: commands.Bot):
     bot.add_command(hello)
+    bot.add_command(make_reply)
     bot.add_listener(on_message)
