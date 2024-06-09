@@ -3,13 +3,13 @@ from discord.ext import commands
 from discord import Message
 from discord import Embed
 from discord import Member
-from discord import Interaction
 
 snipeDataDeleted = {}
 snipeDataEdited = {}
 
 latestUserDeleted: Member | None = None
 latestUserEdited: Member | None = None
+
 
 async def on_message_delete(message: Message) -> None:
     snipeDataDeleted[str(message.author.id * message.channel.id)] = message
@@ -30,6 +30,7 @@ async def on_message_edit(message: Message, after: Message) -> None:
     channel = str(message.channel)
     print(f'[{channel}] {username}: edited meessage.')
 
+
 target_group = app_commands.Group(name="target", description="Snipe Specific People.")
 
 
@@ -47,34 +48,32 @@ async def target_edit_snipe(ctx, member: Member) -> None:
 
 @commands.hybrid_command(name="snipe", description="Snipe the Last Deleted Message.")
 async def snipe(ctx: commands.Context):
-    assert isinstance(latestUserDeleted, Member)
-    await general_snipe(ctx, latestUserDeleted, snipeDataDeleted)
+    await general_snipe(ctx, latestUserDeleted, snipeDataDeleted)  # pyright: ignore
 
 
 @commands.hybrid_command(name="editsnipe", description="Snipe the Last Edited Message.")
-async def editsnipe(ctx: commands.Context):
-    assert isinstance(latestUserEdited, Member)
-    await general_snipe(ctx, latestUserEdited, snipeDataEdited)
+async def edit_snipe(ctx: commands.Context):
+    await general_snipe(ctx, latestUserEdited, snipeDataEdited)  # pyright: ignore
 
 
 async def general_snipe(ctx: commands.Context, member: Member, data: dict):
-
     if member is None:
-        await ctx.send("There's nothing to snipe.")
+        await ctx.send("There's nothing to snipe.", ephemeral=True)
+        return
 
     key = str(member.id * ctx.channel.id)
     if key not in data:
-        await ctx.send("There's nothing to snipe.")
+        await ctx.send("There's nothing to snipe.", ephemeral=True)
         return
     message: Message = data[key]
-    contentEmbed = Embed(
+    content_embed = Embed(
         description=message.content,
         timestamp=message.created_at
     )
-    contentEmbed.set_author(name=member.display_name,
-                     icon_url=member.display_avatar)
+    content_embed.set_author(name=member.display_name,
+                             icon_url=member.display_avatar)
 
-    await ctx.send(embed=contentEmbed)
+    await ctx.send(embed=content_embed)
     for embed in message.embeds:
         await ctx.send(embed.url)
     for attachment in message.attachments:
@@ -84,6 +83,6 @@ async def general_snipe(ctx: commands.Context, member: Member, data: dict):
 async def setup(bot: commands.Bot):
     bot.tree.add_command(target_group)
     bot.add_command(snipe)
-    bot.add_command(editsnipe)
+    bot.add_command(edit_snipe)
     bot.add_listener(on_message_delete)
     bot.add_listener(on_message_edit)

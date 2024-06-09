@@ -8,7 +8,7 @@ import os
 import re
 
 dirname = os.path.dirname(__file__)
-validLinks = ["https://www.tiktok.com/", "www.tiktok.com/"]
+valid_links = ["https://www.tiktok.com/", "www.tiktok.com/"]
 
 
 def tiktok_downloader(link: str) -> str:
@@ -18,7 +18,7 @@ def tiktok_downloader(link: str) -> str:
         'Accept-Language': 'en-US,en;q=0.5',
         # 'Accept-Encoding': 'gzip, deflate, br, zstd',
         'HX-Request': 'true',
-        'HX-Trigger': '_gcaptcha_pt',
+        'HX-Trigger': '_gcaptcha_p)t',
         'HX-Target': 'target',
         'HX-Current-URL': 'https://ssstik.io/en',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -47,7 +47,7 @@ def tiktok_downloader(link: str) -> str:
     response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
     downloadSoup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
 
-    downloadLink: str = downloadSoup.a["href"] # pyright: ignore
+    downloadLink: str = downloadSoup.a["href"]  # pyright: ignore
     urlSplit = re.split('/|\?|&', link)
     videotitle = ""
     for index, word in enumerate(urlSplit):
@@ -67,18 +67,30 @@ def tiktok_downloader(link: str) -> str:
     return filename
 
 
+async def on_message(message: Message) -> None:
+    user_input = message.content
+    if message.author.bot:
+        return
+    if user_input[0:23] == valid_links[0] or user_input[0:15] == valid_links[1]:
+        try:
+            filename = tiktok_downloader(user_input)
+            await message.reply(file=discord.File(filename))
+            os.remove(filename)
+        except Exception as e:
+            print(e)
+
+
 @commands.hybrid_command(name="qwktok")
 async def qwktok(ctx: commands.Context, link: str) -> None:
     try:
         filename = tiktok_downloader(link)
-    except Exception as e:
-        await ctx.send("That is an invalid tiktok link.")
-    try:
         await ctx.send(file=discord.File(filename))
         os.remove(filename)
     except Exception as e:
+        await ctx.send("That is an invalid tiktok link.", ephemeral=True)
         print(e)
 
 
 async def setup(bot: commands.Bot):
     bot.add_command(qwktok)
+    bot.add_listener(on_message)
