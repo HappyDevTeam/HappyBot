@@ -2,22 +2,16 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import requests
 import discord
+from discord import Message
 from discord.ext import commands
 import os
 import re
 
 dirname = os.path.dirname(__file__)
+validLinks = ["https://www.tiktok.com/", "www.tiktok.com/"]
 
-@commands.hybrid_command(name="qwktok")
-async def qwktok(ctx: commands.Context, link: str):
-    filename = tiktok_downloader(link)
-    try:
-        await ctx.send(file=discord.File(filename))
-        os.remove(filename)
-    except Exception as e:
-        print(e)
 
-def tiktok_downloader(link):
+def tiktok_downloader(link: str) -> str:
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0',
         'Accept': '*/*',
@@ -71,7 +65,20 @@ def tiktok_downloader(link):
             else:
                 break
     return filename
-    
+
+
+@commands.hybrid_command(name="qwktok")
+async def qwktok(ctx: commands.Context, link: str) -> None:
+    try:
+        filename = tiktok_downloader(link)
+    except Exception as e:
+        await ctx.send("That is an invalid tiktok link.")
+    try:
+        await ctx.send(file=discord.File(filename))
+        os.remove(filename)
+    except Exception as e:
+        print(e)
+
 
 async def setup(bot: commands.Bot):
     bot.add_command(qwktok)
