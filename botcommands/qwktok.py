@@ -1,10 +1,23 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import requests
+import discord
+from discord.ext import commands
+import os
+import re
 
+dirname = os.path.dirname(__file__)
+
+@commands.hybrid_command(name="qwktok")
+async def qwktok(ctx: commands.Context, link: str):
+    filename = tiktok_downloader(link)
+    try:
+        await ctx.send(file=discord.File(filename))
+        os.remove(filename)
+    except Exception as e:
+        print(e)
 
 def tiktok_downloader(link):
-
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0',
         'Accept': '*/*',
@@ -38,14 +51,27 @@ def tiktok_downloader(link):
     }
 
     response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
-    download_soup = BeautifulSoup(response.text, "html.parser")
+    downloadSoup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
 
-    download_link = download_soup.a["href"]
-    tiktok = urlopen(download_link)
-    with open(f"videos/tiktok.mp4", "wb") as output:
+    downloadLink: str = downloadSoup.a["href"] # pyright: ignore
+    urlSplit = re.split('/|\?|&', link)
+    videotitle = ""
+    for index, word in enumerate(urlSplit):
+        print(word)
+        if word == "video":
+            videotitle = urlSplit[index + 1]
+            break
+    tiktok = urlopen(downloadLink)
+    filename = os.path.join(dirname, f'videos/{videotitle}.mp4')
+    with open(filename, "wb") as output:
         while True:
             data = tiktok.read(4096)
             if data:
                 output.write(data)
             else:
                 break
+    return filename
+    
+
+async def setup(bot: commands.Bot):
+    bot.add_command(qwktok)

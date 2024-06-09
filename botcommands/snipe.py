@@ -3,16 +3,18 @@ from discord.ext import commands
 from discord import Message
 from discord import Embed
 from discord import Member
+from discord import Interaction
 
 snipeDataDeleted = {}
 snipeDataEdited = {}
 
-latestUserDeleted = None
-latestUserEdited = None
+latestUserDeleted: Member | None = None
+latestUserEdited: Member | None = None
 
 async def on_message_delete(message: Message) -> None:
     snipeDataDeleted[str(message.author.id * message.channel.id)] = message
     global latestUserDeleted
+    assert isinstance(message.author, Member)
     latestUserDeleted = message.author
     username = str(message.author)
     channel = str(message.channel)
@@ -22,6 +24,7 @@ async def on_message_delete(message: Message) -> None:
 async def on_message_edit(message: Message, after: Message) -> None:
     snipeDataEdited[str(message.author.id * message.channel.id)] = message
     global latestUserEdited
+    assert isinstance(message.author, Member)
     latestUserEdited = message.author
     username = str(message.author)
     channel = str(message.channel)
@@ -32,23 +35,25 @@ target_group = app_commands.Group(name="target", description="Snipe Specific Peo
 
 @target_group.command(name="snipe", description="Target Snipe the Last Deleted Message sent by "
                                                 "Specified User.")
-async def target_snipe(ctx: commands.Context, member: Member):
+async def target_snipe(ctx, member: Member) -> None:
     await general_snipe(ctx, member, snipeDataDeleted)
 
 
 @target_group.command(name="editsnipe", description="Target Snipe the Last Edited Message sent by "
                                                     "Specified User.")
-async def target_edit_snipe(ctx: commands.Context, member: Member):
+async def target_edit_snipe(ctx, member: Member) -> None:
     await general_snipe(ctx, member, snipeDataEdited)
 
 
 @commands.hybrid_command(name="snipe", description="Snipe the Last Deleted Message.")
 async def snipe(ctx: commands.Context):
+    assert isinstance(latestUserDeleted, Member)
     await general_snipe(ctx, latestUserDeleted, snipeDataDeleted)
 
 
 @commands.hybrid_command(name="editsnipe", description="Snipe the Last Edited Message.")
 async def editsnipe(ctx: commands.Context):
+    assert isinstance(latestUserEdited, Member)
     await general_snipe(ctx, latestUserEdited, snipeDataEdited)
 
 
