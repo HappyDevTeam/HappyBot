@@ -1,3 +1,4 @@
+import asyncio
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import requests
@@ -46,6 +47,7 @@ async def tiktok_downloader(link: str) -> str:
 
     response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
     while str(response.text) == "":
+        await asyncio.sleep(10)
         response = requests.post('https://ssstik.io/abc', params=params, headers=headers,
                                  data=data)
 
