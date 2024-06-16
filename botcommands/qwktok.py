@@ -1,4 +1,6 @@
 import asyncio
+import time
+
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import requests
@@ -9,7 +11,18 @@ import os
 import re
 
 dirname = os.path.dirname(__file__)
-valid_links = ["https://www.tiktok.com/", "www.tiktok.com/"]
+valid_links = ["https://www.tiktok.com/", "www.tiktok.com/",
+               "https://vm.tiktok.com/", "vm.tiktok.com/"]
+
+
+def is_valid_link(user_input: str) -> bool:
+
+    for link in valid_links:
+        link_length = len(link)
+        if user_input[:link_length] == link:
+            return True
+
+    return False
 
 
 async def tiktok_downloader(link: str) -> str:
@@ -45,11 +58,17 @@ async def tiktok_downloader(link: str) -> str:
         'tt': 'a205SDQ_',
     }
 
+    start = time.time()
+
     response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
     while str(response.text) == "":
         await asyncio.sleep(10)
         response = requests.post('https://ssstik.io/abc', params=params, headers=headers,
                                  data=data)
+
+    end = time.time()
+
+    print("TIME TAKEN:" + str(end - start))
 
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
@@ -58,14 +77,8 @@ async def tiktok_downloader(link: str) -> str:
         return "TypeError"
     tiktok = urlopen(download_link)
 
-    url_split = re.split('[/?&]', link)
-    videotitle = ""
-    for index, word in enumerate(url_split):
-        if word == "video":
-            videotitle = url_split[index + 1]
-            break
-
-    filename = os.path.join(dirname, f'videos/{videotitle}.mp4')
+    video_title = "tiktok"
+    filename = os.path.join(dirname, f'videos/{video_title}.mp4')
     with open(filename, "wb") as output:
         while True:
             data = tiktok.read(4096)
@@ -81,7 +94,7 @@ async def on_message(message: Message) -> None:
     user_input = message.content
     if message.author.bot:
         return
-    if user_input[0:23] == valid_links[0] or user_input[0:15] == valid_links[1]:
+    if is_valid_link(user_input):
         reply_message = await message.reply("Attempting to Download and Send TikTok")
         try:
             filename = await tiktok_downloader(user_input)
