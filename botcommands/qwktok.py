@@ -11,7 +11,7 @@ dirname = os.path.dirname(__file__)
 valid_links = ["https://www.tiktok.com/", "www.tiktok.com/"]
 
 
-def tiktok_downloader(link: str) -> str:
+async def tiktok_downloader(link: str) -> str:
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0',
         'Accept': '*/*',
@@ -49,24 +49,19 @@ def tiktok_downloader(link: str) -> str:
         response = requests.post('https://ssstik.io/abc', params=params, headers=headers,
                                  data=data)
 
-
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
-        download_link: str = download_soup.a["href"]
+        download_link: str = download_soup.a["href"]  # pyright: ignore
     except TypeError:
-        print("bruh............................")
         return "TypeError"
     tiktok = urlopen(download_link)
 
     url_split = re.split('[/?&]', link)
     videotitle = ""
-    print("========= url_split begin =========")
     for index, word in enumerate(url_split):
-        print(word)
         if word == "video":
             videotitle = url_split[index + 1]
             break
-    print("========== url_split end ==========")
 
     filename = os.path.join(dirname, f'videos/{videotitle}.mp4')
     with open(filename, "wb") as output:
@@ -87,7 +82,7 @@ async def on_message(message: Message) -> None:
     if user_input[0:23] == valid_links[0] or user_input[0:15] == valid_links[1]:
         reply_message = await message.reply("Attempting to Download and Send TikTok")
         try:
-            filename = tiktok_downloader(user_input)
+            filename = await tiktok_downloader(user_input)
             if filename == "TypeError":
                 return
             await message.reply(file=discord.File(filename))
@@ -101,7 +96,7 @@ async def on_message(message: Message) -> None:
 @commands.hybrid_command(name="qwktok")
 async def qwktok(ctx: commands.Context, link: str) -> None:
     try:
-        filename = tiktok_downloader(link)
+        filename = await tiktok_downloader(link)
         await ctx.send(file=discord.File(filename))
         os.remove(filename)
     except Exception as e:
