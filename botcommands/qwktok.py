@@ -45,17 +45,29 @@ def tiktok_downloader(link: str) -> str:
     }
 
     response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
-    downloadSoup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
+    while str(response.text) == "":
+        response = requests.post('https://ssstik.io/abc', params=params, headers=headers,
+                                 data=data)
 
-    downloadLink: str = downloadSoup.a["href"]  # pyright: ignore
-    urlSplit = re.split('/|\?|&', link)
+
+    download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
+    try:
+        download_link: str = download_soup.a["href"]
+    except TypeError:
+        print("bruh............................")
+        return "TypeError"
+    tiktok = urlopen(download_link)
+
+    url_split = re.split('[/?&]', link)
     videotitle = ""
-    for index, word in enumerate(urlSplit):
+    print("========= url_split begin =========")
+    for index, word in enumerate(url_split):
         print(word)
         if word == "video":
-            videotitle = urlSplit[index + 1]
+            videotitle = url_split[index + 1]
             break
-    tiktok = urlopen(downloadLink)
+    print("========== url_split end ==========")
+
     filename = os.path.join(dirname, f'videos/{videotitle}.mp4')
     with open(filename, "wb") as output:
         while True:
@@ -64,6 +76,7 @@ def tiktok_downloader(link: str) -> str:
                 output.write(data)
             else:
                 break
+
     return filename
 
 
@@ -72,12 +85,17 @@ async def on_message(message: Message) -> None:
     if message.author.bot:
         return
     if user_input[0:23] == valid_links[0] or user_input[0:15] == valid_links[1]:
+        reply_message = await message.reply("Attempting to Download and Send TikTok")
         try:
             filename = tiktok_downloader(user_input)
+            if filename == "TypeError":
+                return
             await message.reply(file=discord.File(filename))
             os.remove(filename)
+            await message.edit(suppress=True)
         except Exception as e:
             print(e)
+        await reply_message.delete()
 
 
 @commands.hybrid_command(name="qwktok")

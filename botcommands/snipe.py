@@ -18,7 +18,7 @@ async def on_message_delete(message: Message) -> None:
     latestUserDeleted = message.author
     username = str(message.author)
     channel = str(message.channel)
-    print(f'[{channel}] {username}: deleted meessage.')
+    print(f'[{channel}] {username}: deleted message.')
 
 
 async def on_message_edit(message: Message, after: Message) -> None:
@@ -28,7 +28,7 @@ async def on_message_edit(message: Message, after: Message) -> None:
     latestUserEdited = message.author
     username = str(message.author)
     channel = str(message.channel)
-    print(f'[{channel}] {username}: edited meessage.')
+    print(f'[{channel}] {username}: edited message.')
 
 
 target_group = app_commands.Group(name="target", description="Snipe Specific People.")
