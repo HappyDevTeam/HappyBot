@@ -48,11 +48,14 @@ async def sync(ctx: commands.Context):
         print(e)
     return sync
 
+
 if __name__ == '__main__':
     assert isinstance(TOKEN, str)
     bot.run(TOKEN)
 
+
 def exit_handler():
     print('\n\n\nBot shutting down')
+
 
 atexit.register(exit_handler)
