@@ -10,7 +10,7 @@ import json
 async def roll(ctx: commands.Context, size: int):
     generated_num = random.randint(1, size)
     try:
-        await ctx.send(generated_num)
+        await ctx.send(str(generated_num))
     except Exception as e:
         print(e)
 
