@@ -1,3 +1,4 @@
+import discord
 from discord import app_commands, Interaction, InteractionResponse, User, TextChannel
 from discord.ext import commands, tasks
 import json
@@ -7,6 +8,10 @@ from datetime import datetime, time
 from typing import List
 from configparser import ConfigParser, NoSectionError
 
+from classes.Pagination import Pagination
+
+MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+               "July", "August", "September", "October", "November", "December"]
 DAYS_PER_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 EXISTS = 0
 MONTH = 1
@@ -210,11 +215,27 @@ async def set_channel(interaction: Interaction, channel: TextChannel):
     await response.send_message("Birthday channel successfully set.", ephemeral=True)
 
 
-# @birthday_group.command(name="list", description="Lists all birthdays!")
-# async def list_birthdays(interaction: discord.Interaction) -> None:
-#     return
+@app_commands.command(name="birthdays", description="Lists all birthdays!")
+async def list_birthdays(interaction: Interaction) -> None:
+    async def get_page(page: int):
+        embed = discord.Embed(title=MONTH_NAMES[page - 1], description="")
+        for i in range(len(birthdays[page - 1])):
+            for user_id in list(birthdays[page - 1][i]):
+                embed.description += (f"<@{user_id}>    :    {MONTH_NAMES[page - 1]} {i + 1}, "
+                                      f"{birthdays[page - 1][i][user_id]}\n")
+
+        if embed.description == "":
+            embed.description = "Nobody Yet"
+
+        total_pages = 12
+        embed.set_footer(text=f"Page {page}/{total_pages}")
+        return embed, total_pages
+
+    print(f"birthday.py: list_birthdays()")
+    await Pagination(interaction, get_page, 30).navigate()
 
 
 async def setup(bot: commands.Bot) -> None:
     bot.tree.add_command(birthday_group)
+    bot.tree.add_command(list_birthdays)
     start_happy_birthday_task(bot)

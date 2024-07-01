@@ -1,9 +1,9 @@
+from discord import Intents
+from discord.ext import commands
 from typing import Final
 import atexit
 import os
 from dotenv import load_dotenv
-from discord import Intents
-from discord.ext import commands
 import pathlib
 
 CURRENT_DIR = pathlib.Path(__file__).parent
