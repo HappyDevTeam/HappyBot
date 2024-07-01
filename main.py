@@ -1,8 +1,8 @@
-from typing import Final, Union
+from typing import Final
 import atexit
 import os
 from dotenv import load_dotenv
-from discord import Intents, Message
+from discord import Intents
 from discord.ext import commands
 import pathlib
 
@@ -12,8 +12,7 @@ CMDS_DIR = CURRENT_DIR / "botcommands"
 load_dotenv()
 TOKEN: Final[str | None] = os.getenv('DISCORD_TOKEN')
 
-intents: Intents = Intents.default()
-intents.message_content = True
+intents: Intents = Intents.all()
 bot = commands.Bot(command_prefix="$", intents=intents)
 
 
