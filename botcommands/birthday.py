@@ -1,5 +1,4 @@
-import discord
-from discord import app_commands
+from discord import app_commands, Interaction, InteractionResponse, User, TextChannel
 from discord.ext import commands, tasks
 import json
 from json.decoder import JSONDecodeError
@@ -13,7 +12,7 @@ EXISTS = 0
 MONTH = 1
 DAY = 2
 MIDNIGHT = time(hour=7, minute=0, second=0)
-BIRTHDAY_CHANNEL: discord.TextChannel
+BIRTHDAY_CHANNEL: TextChannel
 
 birthday_path = './botsettings/birthday.json'
 open_mode = 'r+' if os.path.exists(birthday_path) else 'w+'
@@ -25,10 +24,11 @@ with open(birthday_path, open_mode, encoding="utf-8") as birthday_file:
         birthdays = []
         for i in range(12):
             birthdays.append([])
-            for j in range(31):
+            for j in range(DAYS_PER_MONTH[i]):
                 birthdays[i].append({})
         json.dump(birthdays, birthday_file, ensure_ascii=False, indent=4)
-        print("birthday.py JSONDecodeError: " + str(e))
+        birthday_file.truncate()
+        print("birthday.py: JSONDecodeError:" + str(e))
 
 channel_path = './botsettings/channelsettings.ini'
 open_mode = 'r+' if os.path.exists(channel_path) else 'w+'
@@ -43,7 +43,7 @@ with open(channel_path, open_mode, encoding="utf-8") as channel_file:
         config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
         config.write(channel_file)
         channel_file.truncate()
-        print("birthday.py NoSectionError: " + str(e))
+        print("birthday.py: NoSectionError: " + str(e))
 
 birthday_group = app_commands.Group(name="birthday", description="Birthday Commands!")
 
@@ -90,8 +90,8 @@ def is_existing_user(user_id: str) -> List[bool | int]:
     return [False, -1, -1]
 
 
-async def is_valid_date(interaction: discord.Interaction, date: str) -> bool:
-    response: discord.InteractionResponse = interaction.response  # type: ignore
+async def is_valid_date(interaction: Interaction, date: str) -> bool:
+    response: InteractionResponse = interaction.response  # type: ignore
 
     try:
         datetime.strptime(date, '%m/%d/%Y').date()
@@ -126,8 +126,8 @@ def start_happy_birthday_task(bot: commands.Bot):
 
 @birthday_group.command(name="add", description="Add a user's birthday to the list! "
                                                 "Format for Date: MM/DD/YYYY")
-async def add_birthday(interaction: discord.Interaction, user: discord.User, date: str) -> None:
-    response: discord.InteractionResponse = interaction.response  # type: ignore
+async def add_birthday(interaction: Interaction, user: User, date: str) -> None:
+    response: InteractionResponse = interaction.response  # type: ignore
 
     if not await is_valid_date(interaction, date):
         return
@@ -144,14 +144,14 @@ async def add_birthday(interaction: discord.Interaction, user: discord.User, dat
         return
 
     insert_birthday(month, day, year, user_id)
+    print(f"birthday.py: add_birthday({user.name}, {date})")
     await response.send_message("Birthday was successfully added!", ephemeral=True)
 
 
 @birthday_group.command(name="edit", description="Edit an existing user's birthday on the list "
                                                  "Format for Date: MM/DD/YYYY")
-async def edit_birthday(interaction: discord.Interaction,
-                        user: discord.User, new_date: str) -> None:
-    response: discord.InteractionResponse = interaction.response  # type: ignore
+async def edit_birthday(interaction: Interaction, user: User, new_date: str) -> None:
+    response: InteractionResponse = interaction.response  # type: ignore
 
     user_id = str(user.id)
     user_info = is_existing_user(user_id)
@@ -172,13 +172,14 @@ async def edit_birthday(interaction: discord.Interaction,
     user_id = str(user.id)
 
     insert_birthday(month, day, year, user_id)
+    print(f"birthday.py: edit_birthday({user.name}, {new_date})")
     await response.send_message("Birthday was successfully edited!", ephemeral=True)
 
 
 @birthday_group.command(name="delete",
                         description="Remove an existing user's birthday on the list")
-async def delete_birthday(interaction: discord.Interaction, user: discord.User):
-    response: discord.InteractionResponse = interaction.response  # type: ignore
+async def delete_birthday(interaction: Interaction, user: User):
+    response: InteractionResponse = interaction.response  # type: ignore
 
     user_id = str(user.id)
     user_info = is_existing_user(user_id)
@@ -189,14 +190,15 @@ async def delete_birthday(interaction: discord.Interaction, user: discord.User):
         return
 
     remove_birthday(user_info[MONTH], user_info[DAY], user_id)
+    print(f"birthday.py: delete_birthday({user.name})")
     await response.send_message("Birthday was successfully removed", ephemeral=True)
 
 
 @birthday_group.command(name="channel",
                         description="Sets the channel where birthdays will be announced!")
-async def set_channel(interaction: discord.Interaction, channel: discord.TextChannel):
+async def set_channel(interaction: Interaction, channel: TextChannel):
     global BIRTHDAY_CHANNEL_ID
-    response: discord.InteractionResponse = interaction.response  # type: ignore
+    response: InteractionResponse = interaction.response  # type: ignore
     BIRTHDAY_CHANNEL_ID = channel.id
 
     config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
@@ -204,6 +206,7 @@ async def set_channel(interaction: discord.Interaction, channel: discord.TextCha
         config.write(channel_file)
         channel_file.truncate()
 
+    print(f"birthday.py: set_channel({channel.name})")
     await response.send_message("Birthday channel successfully set.", ephemeral=True)
 
 
