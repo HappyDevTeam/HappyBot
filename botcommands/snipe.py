@@ -1,8 +1,6 @@
-from discord import app_commands
+from discord import app_commands, Message, Embed, Member, Interaction, InteractionResponse
 from discord.ext import commands
-from discord import Message
-from discord import Embed
-from discord import Member
+from botcommands.qwktok import is_valid_tiktok_link
 
 snipeDataDeleted = {}
 snipeDataEdited = {}
@@ -36,34 +34,48 @@ target_group = app_commands.Group(name="target", description="Snipe Specific Peo
 
 @target_group.command(name="snipe", description="Target Snipe the Last Deleted Message sent by "
                                                 "Specified User.")
-async def target_snipe(ctx, member: Member) -> None:
-    await general_snipe(ctx, member, snipeDataDeleted)
+async def target_snipe(interaction: Interaction, member: Member) -> None:
+    print(f"snipe.py: target_snipe({member.name})")
+    await general_snipe(interaction, member, snipeDataDeleted)
 
 
 @target_group.command(name="editsnipe", description="Target Snipe the Last Edited Message sent by "
                                                     "Specified User.")
-async def target_edit_snipe(ctx, member: Member) -> None:
-    await general_snipe(ctx, member, snipeDataEdited)
+async def target_edit_snipe(interaction: Interaction, member: Member) -> None:
+    print(f"snipe.py: target_edit_snipe({member.name})")
+    await general_snipe(interaction, member, snipeDataEdited)
 
 
 @commands.hybrid_command(name="snipe", description="Snipe the Last Deleted Message.")
 async def snipe(ctx: commands.Context):
+    print(f"snipe.py: snipe()")
     await general_snipe(ctx, latestUserDeleted, snipeDataDeleted)  # pyright: ignore
 
 
 @commands.hybrid_command(name="editsnipe", description="Snipe the Last Edited Message.")
 async def edit_snipe(ctx: commands.Context):
+    print(f"snipe.py: edit_snipe()")
     await general_snipe(ctx, latestUserEdited, snipeDataEdited)  # pyright: ignore
 
 
-async def general_snipe(ctx: commands.Context, member: Member, data: dict):
+async def general_snipe(ctx: commands.Context | Interaction, member: Member, data: dict):
+    response: commands.Context | InteractionResponse = ctx
+    if type(ctx) is Interaction:
+        response = ctx.response  # type: ignore
+
     if member is None:
-        await ctx.send("There's nothing to snipe.", ephemeral=True)
+        if type(ctx) is commands.Context:
+            await response.send("There's nothing to snipe.", ephemeral=True)
+        else:
+            await response.send_message("There's nothing to snipe.", ephemeral=True)
         return
 
     key = str(member.id * ctx.channel.id)
     if key not in data:
-        await ctx.send("There's nothing to snipe.", ephemeral=True)
+        if type(ctx) is commands.Context:
+            await response.send("There's nothing to snipe.", ephemeral=True)
+        else:
+            await response.send_message("There's nothing to snipe.", ephemeral=True)
         return
     message: Message = data[key]
     content_embed = Embed(
@@ -73,11 +85,22 @@ async def general_snipe(ctx: commands.Context, member: Member, data: dict):
     content_embed.set_author(name=member.display_name,
                              icon_url=member.display_avatar)
 
-    await ctx.send(embed=content_embed)
-    for embed in message.embeds:
-        await ctx.send(embed.url)
+    if type(response) is commands.Context:
+        await response.send(embed=content_embed)
+    else:
+        await response.send_message(embed=content_embed)
     for attachment in message.attachments:
-        await ctx.send(attachment.url)
+        if type(response) is commands.Context:
+            await response.send(attachment.url)
+        else:
+            await response.send_message(attachment.url)
+    for embed in message.embeds:
+        if is_valid_tiktok_link(str(embed.description)):
+            return
+        if type(response) is commands.Context:
+            await response.send(embed.url)
+        else:
+            await response.send(embed.url)
 
 
 async def setup(bot: commands.Bot):

@@ -21,6 +21,7 @@ async def hello(ctx: commands.Context):
         await ctx.send(f"Hi {ctx.author.display_name} test", ephemeral=True)
     except Exception as e:
         print(e)
+    print(f"responses.py: hello()")
 
 
 @commands.hybrid_command(name="make_reply")
@@ -28,13 +29,16 @@ async def make_reply(ctx: commands.Context, target: str, response: str):
     autoreply[target] = response
     json.dump(autoreply, autoreplyFile, ensure_ascii=False, indent=4)
     await ctx.reply("Replies to " + target + " with " + autoreply[target])
+    print(f"responses.py: make_reply({target}, {response})")
 
 
 @commands.hybrid_command(name="delete_reply")
 async def delete_reply(ctx: commands.Context, target: str):
     autoreply.pop(target, None)
     json.dump(autoreply, autoreplyFile, ensure_ascii=False, indent=4)
+    autoreplyFile.truncate()
     autoreplyFile.close()
+    print(f"responses.py: delete_reply({target})")
 
 
 def get_response(user_input: str) -> str | None:

@@ -1,9 +1,9 @@
-from typing import Final, Union
+from discord import Intents
+from discord.ext import commands
+from typing import Final
 import atexit
 import os
 from dotenv import load_dotenv
-from discord import Intents, Message
-from discord.ext import commands
 import pathlib
 
 CURRENT_DIR = pathlib.Path(__file__).parent
@@ -12,8 +12,7 @@ CMDS_DIR = CURRENT_DIR / "botcommands"
 load_dotenv()
 TOKEN: Final[str | None] = os.getenv('DISCORD_TOKEN')
 
-intents: Intents = Intents.default()
-intents.message_content = True
+intents: Intents = Intents.all()
 bot = commands.Bot(command_prefix="$", intents=intents)
 
 
@@ -48,11 +47,14 @@ async def sync(ctx: commands.Context):
         print(e)
     return sync
 
+
 if __name__ == '__main__':
     assert isinstance(TOKEN, str)
     bot.run(TOKEN)
 
+
 def exit_handler():
     print('\n\n\nBot shutting down')
+
 
 atexit.register(exit_handler)
