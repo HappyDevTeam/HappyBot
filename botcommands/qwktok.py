@@ -1,21 +1,19 @@
-import asyncio
-import time
-
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
-import requests
 import discord
 from discord import Message
 from discord.ext import commands
+import asyncio
+import time
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+import requests
 import os
-import re
 
 dirname = os.path.dirname(__file__)
 valid_links = ["https://www.tiktok.com/", "www.tiktok.com/",
                "https://vm.tiktok.com/", "vm.tiktok.com/"]
 
 
-def is_valid_link(user_input: str) -> bool:
+def is_valid_tiktok_link(user_input: str) -> bool:
 
     for link in valid_links:
         link_length = len(link)
@@ -68,7 +66,7 @@ async def tiktok_downloader(link: str) -> str:
 
     end = time.time()
 
-    print("TIME TAKEN:" + str(end - start))
+    print("TIME TAKEN TO DOWNLOAD TIKTOK:" + str(end - start))
 
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
@@ -92,9 +90,12 @@ async def tiktok_downloader(link: str) -> str:
 
 async def on_message(message: Message) -> None:
     user_input = message.content
-    if message.author.bot:
-        return
-    if is_valid_link(user_input):
+    suppress: bool = True
+    for embed in message.embeds:
+        if is_valid_tiktok_link(str(embed.description)):
+            user_input = str(embed.description)
+            suppress = False
+    if is_valid_tiktok_link(user_input):
         reply_message = await message.reply("Attempting to Download and Send TikTok")
         try:
             filename = await tiktok_downloader(user_input)
@@ -102,7 +103,8 @@ async def on_message(message: Message) -> None:
                 return
             await message.reply(file=discord.File(filename))
             os.remove(filename)
-            await message.edit(suppress=True)
+            if suppress:
+                await message.edit(suppress=True)
         except Exception as e:
             print(e)
         await reply_message.delete()
@@ -117,6 +119,7 @@ async def qwktok(ctx: commands.Context, link: str) -> None:
     except Exception as e:
         await ctx.send("That is an invalid tiktok link.", ephemeral=True)
         print(e)
+    print(f"qwktok.py: qwktok({link})")
 
 
 async def setup(bot: commands.Bot):

@@ -101,6 +101,7 @@ async def roll(ctx: commands.Context, size: int):
         await ctx.send(str(generated_num))
     except Exception as e:
         print(e)
+    print(f"shrineapi.py: roll()")
 
 @commands.hybrid_command(name="shrine")
 async def shrine(ctx: commands.Context):
@@ -115,6 +116,7 @@ async def shrine(ctx: commands.Context):
         await ctx.send(embed=content_embed)
     except Exception as e:
         print(e)
+    print(f"shrineapi.py: shrine()")
     
 
 async def setup(bot: commands.Bot):
