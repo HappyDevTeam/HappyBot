@@ -4,18 +4,44 @@ from discord.ext import commands
 import asyncio
 import time
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 import requests
 import os
+import re
 
-dirname = os.path.dirname(__file__)
-valid_links = ["https://www.tiktok.com/", "www.tiktok.com/",
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    # 'Accept-Encoding': 'gzip, deflate, br, zstd',
+    'HX-Request': 'true',
+    'HX-Trigger': '_gcaptcha_pt',
+    'HX-Target': 'target',
+    'HX-Current-URL': 'https://ssstik.io/en-1',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'Origin': 'https://ssstik.io',
+    'Alt-Used': 'ssstik.io',
+    'Connection': 'keep-alive',
+    'Referer': 'https://ssstik.io/en-1',
+    # 'Cookie': 'cf_clearance=9ProbLa2R5H2so6LWLxhGL4VbSe4xY6Gr4H1HpYJgNs-1718498522-1.0.1.1-DXBBrZ8M0qbj9QxebLYAoriFhdocCpmrDygmX4DCHjNYSYynYoeF1mH2Kb4eZKiGHBuinNSRaxFSpiOQx8tQdg',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'Priority': 'u=0',
+    # Requests doesn't support trailers
+    # 'TE': 'trailers',
+}
+
+PARAMS = {
+    'url': 'dl',
+}
+
+DIRNAME = os.path.dirname(__file__)
+VALID_LINKS = ["https://www.tiktok.com/", "www.tiktok.com/",
                "https://vm.tiktok.com/", "vm.tiktok.com/"]
 
 
 def is_valid_tiktok_link(user_input: str) -> bool:
-
-    for link in valid_links:
+    for link in VALID_LINKS:
         link_length = len(link)
         if user_input[:link_length] == link:
             return True
@@ -24,31 +50,42 @@ def is_valid_tiktok_link(user_input: str) -> bool:
 
 
 async def tiktok_downloader(link: str) -> str:
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.5',
-        # 'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'HX-Request': 'true',
-        'HX-Trigger': '_gcaptcha_p)t',
-        'HX-Target': 'target',
-        'HX-Current-URL': 'https://ssstik.io/en',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Origin': 'https://ssstik.io',
-        'Alt-Used': 'ssstik.io',
-        'Connection': 'keep-alive',
-        'Referer': 'https://ssstik.io/en',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'Priority': 'u=1',
-        # Requests doesn't support trailers
-        # 'TE': 'trailers',e
-    }
+    url: str = link
+    if "video" not in link or "photo" not in link:
+        url = requests.get(link).url
 
-    params = {
-        'url': 'dl',
-    }
+    url_split = re.split('[/?&]', url)
+    filename: str = ""
+
+    for index, word in enumerate(url_split):
+        if word == "video":
+            video_id = url_split[index + 1]
+            filename = await tiktok_video_downloader(video_id, link)
+            break
+        if word == "photo":
+            break
+            # video_id = url_split[index + 1]
+            # filename = await tiktok_photo_downloader(video_id)
+            # break
+
+    return filename
+
+
+async def write_data(filename: str, link: str) -> str:
+    file_path = os.path.join(DIRNAME, f'videos/{filename}.mp4')
+    tiktok = requests.get(link, params=PARAMS, headers=HEADERS)
+    while tiktok.status_code != 200:
+        await asyncio.sleep(1)
+        tiktok = requests.get(link, params=PARAMS, headers=HEADERS)
+    with open(file_path, "wb") as output:
+        for chunk in tiktok.iter_content(chunk_size=4096):
+            if chunk:
+                output.write(chunk)
+
+    return file_path
+
+
+async def tiktok_video_downloader(video_id: str, link: str) -> str:
 
     data = {
         'id': link,
@@ -58,10 +95,10 @@ async def tiktok_downloader(link: str) -> str:
 
     start = time.time()
 
-    response = requests.post('https://ssstik.io/abc', params=params, headers=headers, data=data)
+    response = requests.post('https://ssstik.io/abc', params=PARAMS, headers=HEADERS, data=data)
     while str(response.text) == "":
         await asyncio.sleep(10)
-        response = requests.post('https://ssstik.io/abc', params=params, headers=headers,
+        response = requests.post('https://ssstik.io/abc', params=PARAMS, headers=HEADERS,
                                  data=data)
 
     end = time.time()
@@ -71,21 +108,15 @@ async def tiktok_downloader(link: str) -> str:
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
         download_link: str = download_soup.a["href"]  # pyright: ignore
+        if len(download_link) < 2:
+            return ""
     except TypeError:
-        return "TypeError"
-    tiktok = urlopen(download_link)
+        return ""
+    return await write_data(video_id, download_link)
 
-    video_title = "tiktok"
-    filename = os.path.join(dirname, f'videos/{video_title}.mp4')
-    with open(filename, "wb") as output:
-        while True:
-            data = tiktok.read(4096)
-            if data:
-                output.write(data)
-            else:
-                break
 
-    return filename
+async def tiktok_photo_downloader(video_id: str) -> str:
+    return await write_data(video_id, f"https://r1.ssstik.top/ssstik/{video_id}")
 
 
 async def on_message(message: Message) -> None:
@@ -96,10 +127,9 @@ async def on_message(message: Message) -> None:
             user_input = str(embed.description)
             suppress = False
     if is_valid_tiktok_link(user_input):
-        reply_message = await message.reply("Attempting to Download and Send TikTok")
         try:
             filename = await tiktok_downloader(user_input)
-            if filename == "TypeError":
+            if filename == "":
                 return
             await message.reply(file=discord.File(filename))
             os.remove(filename)
@@ -107,7 +137,6 @@ async def on_message(message: Message) -> None:
                 await message.edit(suppress=True)
         except Exception as e:
             print(e)
-        await reply_message.delete()
 
 
 @commands.hybrid_command(name="qwktok")
