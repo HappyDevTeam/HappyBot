@@ -59,7 +59,7 @@ async def edit_snipe(ctx: commands.Context):
 
 
 async def general_snipe(ctx: commands.Context | Interaction, member: Member, data: dict):
-    response: commands.Context | InteractionResponse = ctx
+    response: commands.Context | InteractionResponse = ctx  # pyright: ignore
     if type(ctx) is Interaction:
         response = ctx.response  # type: ignore
 
@@ -70,12 +70,13 @@ async def general_snipe(ctx: commands.Context | Interaction, member: Member, dat
             await response.send_message("There's nothing to snipe.", ephemeral=True)
         return
 
-    key = str(member.id * ctx.channel.id)
+    key = str(member.id * ctx.channel.id)  # pyright: ignore
     if key not in data:
         if type(ctx) is commands.Context:
-            await response.send("There's nothing to snipe.", ephemeral=True)
+            await response.send("There's nothing to snipe.", ephemeral=True)  # pyright: ignore
         else:
-            await response.send_message("There's nothing to snipe.", ephemeral=True)
+            await response.send_message("There's nothing to snipe.",  # pyright: ignore
+                                        ephemeral=True)
         return
     message: Message = data[key]
     content_embed = Embed(
@@ -88,19 +89,19 @@ async def general_snipe(ctx: commands.Context | Interaction, member: Member, dat
     if type(response) is commands.Context:
         await response.send(embed=content_embed)
     else:
-        await response.send_message(embed=content_embed)
+        await response.send_message(embed=content_embed)  # pyright: ignore
     for attachment in message.attachments:
         if type(response) is commands.Context:
             await response.send(attachment.url)
         else:
-            await response.send_message(attachment.url)
+            await response.send_message(attachment.url)  # pyright: ignore
     for embed in message.embeds:
         if is_valid_tiktok_link(str(embed.description)):
             return
         if type(response) is commands.Context:
             await response.send(embed.url)
         else:
-            await response.send(embed.url)
+            await response.send_message(embed.url)  # pyright: ignore
 
 
 async def setup(bot: commands.Bot):
