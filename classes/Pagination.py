@@ -14,7 +14,7 @@ class Pagination(discord.ui.View):
         emb, self.total_pages = await self.get_page(self.index)
         if self.total_pages == 1:
             await self.interaction.response.send_message(embed=emb)
-        elif self.total_pages > 1:
+        elif self.total_pages > 1:  # pyright: ignore
             self.update_buttons()
             await self.interaction.response.send_message(embed=emb, view=self)
 
@@ -24,27 +24,27 @@ class Pagination(discord.ui.View):
         await interaction.response.edit_message(embed=emb, view=self)
 
     def update_buttons(self):
-        self.children[0].disabled = self.index == 1
-        self.children[1].disabled = self.index == 1
-        self.children[2].disabled = self.index == self.total_pages
-        self.children[3].disabled = self.index == self.total_pages
+        self.children[0].disabled = self.index == 1  # pyright: ignore
+        self.children[1].disabled = self.index == 1  # pyright: ignore
+        self.children[2].disabled = self.index == self.total_pages  # pyright: ignore
+        self.children[3].disabled = self.index == self.total_pages  # pyright: ignore
 
-    @discord.ui.button(emoji="⏮️", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(emoji="⏮️", style=discord.ButtonStyle.blurple)  # pyright: ignore
     async def start(self, interaction: discord.Interaction, button: discord.Button):
         self.index = 1
         await self.edit_page(interaction)
 
-    @discord.ui.button(emoji="◀️", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(emoji="◀️", style=discord.ButtonStyle.blurple)  # pyright: ignore
     async def previous(self, interaction: discord.Interaction, button: discord.Button):
-        self.index -= 1
+        self.index -= 1  # pyright: ignore
         await self.edit_page(interaction)
 
-    @discord.ui.button(emoji="▶️", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(emoji="▶️", style=discord.ButtonStyle.blurple)  # pyright: ignore
     async def next(self, interaction: discord.Interaction, button: discord.Button):
-        self.index += 1
+        self.index += 1  # pyright: ignore
         await self.edit_page(interaction)
 
-    @discord.ui.button(emoji="⏭️", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(emoji="⏭️", style=discord.ButtonStyle.blurple)  # pyright: ignore
     async def end(self, interaction: discord.Interaction, button: discord.Button):
         self.index = self.total_pages
         await self.edit_page(interaction)

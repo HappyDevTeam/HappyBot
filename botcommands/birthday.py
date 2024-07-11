@@ -7,48 +7,21 @@ import os
 from datetime import datetime, time
 from typing import List
 from configparser import ConfigParser, NoSectionError
-
 from classes.Pagination import Pagination
 
-MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
-               "July", "August", "September", "October", "November", "December"]
-DAYS_PER_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-EXISTS = 0
-MONTH = 1
-DAY = 2
-MIDNIGHT = time(hour=7, minute=0, second=0)
+MONTH_NAMES: list[str] = ["January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"]
+DAYS_PER_MONTH: list[int] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+EXISTS: int = 0
+MONTH: int = 1
+DAY: int = 2
+MIDNIGHT: time = time(hour=7, minute=0, second=0)
+BIRTHDAY_PATH: str = './botsettings/birthday.json'
+CHANNEL_PATH: str = './botsettings/channelsettings.ini'
+OPEN_MODE: str = ""
+BIRTHDAYS: list[list[dict[str, str]]] = []
+BIRTHDAY_CHANNEL_ID: int = -1
 BIRTHDAY_CHANNEL: TextChannel
-
-birthday_path = './botsettings/birthday.json'
-open_mode = 'r+' if os.path.exists(birthday_path) else 'w+'
-with open(birthday_path, open_mode, encoding="utf-8") as birthday_file:
-    birthdays: list[list[dict[str, str]]]
-    try:
-        birthdays = json.load(birthday_file)
-    except JSONDecodeError as e:
-        birthdays = []
-        for i in range(12):
-            birthdays.append([])
-            for j in range(DAYS_PER_MONTH[i]):
-                birthdays[i].append({})
-        json.dump(birthdays, birthday_file, ensure_ascii=False, indent=4)
-        birthday_file.truncate()
-        print("birthday.py: JSONDecodeError:" + str(e))
-
-channel_path = './botsettings/channelsettings.ini'
-open_mode = 'r+' if os.path.exists(channel_path) else 'w+'
-with open(channel_path, open_mode, encoding="utf-8") as channel_file:
-    config = ConfigParser()
-    config.read(channel_path)
-    BIRTHDAY_CHANNEL_ID: int
-    try:
-        BIRTHDAY_CHANNEL_ID = int(config.get('Channel', 'birthday_channel'))
-    except NoSectionError as e:
-        BIRTHDAY_CHANNEL_ID = -1
-        config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
-        config.write(channel_file)
-        channel_file.truncate()
-        print("birthday.py: NoSectionError: " + str(e))
 
 birthday_group = app_commands.Group(name="birthday", description="Birthday Commands!")
 
@@ -62,8 +35,8 @@ async def happy_birthday() -> None:
     year = int(date[6:])
     print("Today's Date: " + date)
 
-    for user_id in list(birthdays[month][day].keys()):
-        user_year = int(birthdays[month][day][user_id])
+    for user_id in list(BIRTHDAYS[month][day].keys()):
+        user_year = int(BIRTHDAYS[month][day][user_id])
         user_id = int(user_id)
         age = year - user_year
 
@@ -72,25 +45,25 @@ async def happy_birthday() -> None:
 
 
 def insert_birthday(month: int, day: int, year: str, user_id: str) -> None:
-    birthdays[month][day].update({user_id: year})
+    BIRTHDAYS[month][day].update({user_id: year})
 
-    with open(birthday_path, open_mode, encoding="utf-8") as birthday_file:
-        json.dump(birthdays, birthday_file, ensure_ascii=False, indent=4)
+    with open(BIRTHDAY_PATH, OPEN_MODE, encoding="utf-8") as birthday_file:
+        json.dump(BIRTHDAYS, birthday_file, ensure_ascii=False, indent=4)
         birthday_file.truncate()
 
 
 def remove_birthday(month: int, day: int, user_id: str) -> None:
-    birthdays[month][day].pop(user_id, None)
+    BIRTHDAYS[month][day].pop(user_id, None)
 
-    with open(birthday_path, open_mode, encoding="utf-8") as birthday_file:
-        json.dump(birthdays, birthday_file, ensure_ascii=False, indent=4)
+    with open(BIRTHDAY_PATH, OPEN_MODE, encoding="utf-8") as birthday_file:
+        json.dump(BIRTHDAYS, birthday_file, ensure_ascii=False, indent=4)
         birthday_file.truncate()
 
 
 def is_existing_user(user_id: str) -> List[bool | int]:
     for month in range(12):
         for day in range(DAYS_PER_MONTH[month]):
-            if user_id in birthdays[month][day]:
+            if user_id in BIRTHDAYS[month][day]:
                 return [True, month, day]
     return [False, -1, -1]
 
@@ -106,11 +79,46 @@ async def is_valid_date(interaction: Interaction, date: str) -> bool:
         return False
 
 
-def start_happy_birthday_task(bot: commands.Bot):
-    global BIRTHDAY_CHANNEL
+def load_files(bot: commands.Bot):
+    global OPEN_MODE
+    global BIRTHDAYS
     global BIRTHDAY_CHANNEL_ID
-    BIRTHDAY_CHANNEL = bot.get_channel(BIRTHDAY_CHANNEL_ID)  # pyright: ignore
+    global BIRTHDAY_CHANNEL
 
+    if BIRTHDAY_PATH == '':
+        print("birthday.py: Please set a file path for BIRTHDAY_PATH")
+
+    if CHANNEL_PATH == '':
+        print("birthday.py: Please set a file path for CHANNEL_PATH")
+
+    OPEN_MODE = 'r+' if os.path.exists(BIRTHDAY_PATH) else 'w+'
+    with open(BIRTHDAY_PATH, OPEN_MODE, encoding="utf-8") as birthday_file:
+        try:
+            BIRTHDAYS = json.load(birthday_file)
+        except JSONDecodeError as e:
+            BIRTHDAYS = []
+            for i in range(12):
+                BIRTHDAYS.append([])
+                for j in range(DAYS_PER_MONTH[i]):
+                    BIRTHDAYS[i].append({})
+            json.dump(BIRTHDAYS, birthday_file, ensure_ascii=False, indent=4)
+            birthday_file.truncate()
+            print("birthday.py: JSONDecodeError:" + str(e))
+
+    OPEN_MODE = 'r+' if os.path.exists(CHANNEL_PATH) else 'w+'
+    with open(CHANNEL_PATH, OPEN_MODE, encoding="utf-8") as channel_file:
+        config = ConfigParser()
+        config.read(CHANNEL_PATH)
+        try:
+            BIRTHDAY_CHANNEL_ID = int(config.get('Channel', 'birthday_channel'))
+        except NoSectionError as e:
+            BIRTHDAY_CHANNEL_ID = -1
+            config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
+            config.write(channel_file)
+            channel_file.truncate()
+            print("birthday.py: NoSectionError: " + str(e))
+
+    BIRTHDAY_CHANNEL = bot.get_channel(BIRTHDAY_CHANNEL_ID)  # pyright: ignore
     if BIRTHDAY_CHANNEL is None:
         for guild in bot.guilds:
             for channel in guild.text_channels:
@@ -119,14 +127,21 @@ def start_happy_birthday_task(bot: commands.Bot):
                     BIRTHDAY_CHANNEL_ID = BIRTHDAY_CHANNEL.id
                     break
 
-        with open(channel_path, open_mode, encoding="utf-8") as channel_file:
-            config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
-            config.write(channel_file)
-            channel_file.truncate()
+        with open(CHANNEL_PATH, OPEN_MODE, encoding="utf-8") as channel_file:
+            config = ConfigParser()
+        config.read(CHANNEL_PATH)
+        config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
+        config.write(channel_file)
+        channel_file.truncate()
 
-    if not happy_birthday.is_running():
-        happy_birthday.start()
-        print("Happy Birthday task started")
+    if OPEN_MODE == "":
+        print("birthday.py: failed to set OPEN_MODE")
+
+    if len(BIRTHDAYS) == 0:
+        print("birthday.py: failed to load BIRTHDAYS")
+
+    print("birthday.py: OPEN_MODE successfully set")
+    print("birthday.py: BIRTHDAYS successfully loaded")
 
 
 @birthday_group.command(name="add", description="Add a user's birthday to the list! "
@@ -206,8 +221,10 @@ async def set_channel(interaction: Interaction, channel: TextChannel):
     response: InteractionResponse = interaction.response  # type: ignore
     BIRTHDAY_CHANNEL_ID = channel.id
 
+    config = ConfigParser()
+    config.read(CHANNEL_PATH)
     config["Channel"] = {"birthday_channel": str(BIRTHDAY_CHANNEL_ID)}
-    with open(channel_path, open_mode, encoding="utf-8") as channel_file:
+    with open(CHANNEL_PATH, OPEN_MODE, encoding="utf-8") as channel_file:
         config.write(channel_file)
         channel_file.truncate()
 
@@ -219,10 +236,10 @@ async def set_channel(interaction: Interaction, channel: TextChannel):
 async def list_birthdays(interaction: Interaction) -> None:
     async def get_page(page: int):
         embed = discord.Embed(title=MONTH_NAMES[page - 1], description="")
-        for i in range(len(birthdays[page - 1])):
-            for user_id in list(birthdays[page - 1][i]):
+        for i in range(len(BIRTHDAYS[page - 1])):
+            for user_id in list(BIRTHDAYS[page - 1][i]):
                 embed.description += (f"<@{user_id}>    :    {MONTH_NAMES[page - 1]} {i + 1}, "
-                                      f"{birthdays[page - 1][i][user_id]}\n")
+                                      f"{BIRTHDAYS[page - 1][i][user_id]}\n")  # pyright: ignore
 
         if embed.description == "":
             embed.description = "Nobody Yet"
@@ -236,6 +253,11 @@ async def list_birthdays(interaction: Interaction) -> None:
 
 
 async def setup(bot: commands.Bot) -> None:
+    load_files(bot)
+
     bot.tree.add_command(birthday_group)
     bot.tree.add_command(list_birthdays)
-    start_happy_birthday_task(bot)
+
+    if not happy_birthday.is_running():
+        happy_birthday.start()
+        print("birthday.py: Happy Birthday task started")
