@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import json
+from classes.Pagination import Pagination
 inconsistencies = {"Friends ‘Til the End":"Friends 'til the End"}
 
 async def getPerks():
@@ -88,7 +89,7 @@ async def getDescription(perks):
         ))
         soup: BeautifulSoup = BeautifulSoup(response[i].text, "html.parser") #pyright:ignore
         desc.append(soup.find("div",class_="perkDesc divTableCell").get_text()) #pyright:ignore
-        desc.find('"')
+
 
     return desc
     
@@ -103,22 +104,17 @@ async def roll(ctx: commands.Context, size: int):
         print(e)
     print(f"shrineapi.py: roll()")
 
-@commands.hybrid_command(name="shrine")
-async def shrine(ctx: commands.Context):
-    perkNames = await getPerks()
-    perkDescriptions = await getDescription(perkNames)
-
-    content_embed = Embed(
-        title=perkNames[0],
-        description=perkDescriptions[0]
-        )
-    try:
-        await ctx.send(embed=content_embed)
-    except Exception as e:
-        print(e)
-    print(f"shrineapi.py: shrine()")
-    
+@app_commands.command(name="shrine", description="Lists all perks in current Shrine of Secrets!")
+async def list_shrine(interaction: discord.Interaction) -> None:
+    perks = await getPerks()
+    description = await getDescription(perks)
+    async def get_page(page: int):
+        embed = discord.Embed(title=perks[page - 1], description=description[page - 1])
+        total_pages = 4
+        embed.set_footer(text=f"Page {page}/{total_pages}")
+        return embed, total_pages
+    await Pagination(interaction, get_page, 300).navigate()
 
 async def setup(bot: commands.Bot):
     bot.add_command(roll)
-    bot.add_command(shrine)
+    bot.tree.add_command(list_shrine)
