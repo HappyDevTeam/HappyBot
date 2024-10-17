@@ -38,10 +38,8 @@ async def happy_birthday() -> None:
     for user_id in list(BIRTHDAYS[month][day].keys()):
         user_year = int(BIRTHDAYS[month][day][user_id])
         user_id = int(user_id)
-        age = year - user_year
 
-        await BIRTHDAY_CHANNEL.send(f"Happy Birthday, <@{user_id}>! "  # pyright: ignore
-                                    f"How do you feel about being {age}?")
+        await BIRTHDAY_CHANNEL.send(f"Happy Birthday, <@{user_id}>!")  # pyright: ignore
 
 
 def insert_birthday(month: int, day: int, year: str, user_id: str) -> None:
