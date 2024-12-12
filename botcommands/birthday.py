@@ -15,7 +15,7 @@ DAYS_PER_MONTH: list[int] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 EXISTS: int = 0
 MONTH: int = 1
 DAY: int = 2
-MIDNIGHT: time = time(hour=7, minute=0, second=0)
+MIDNIGHT: time = time(0, 0, 0, 0, datetime.now().astimezone().tzinfo)
 BIRTHDAY_PATH: str = './botsettings/birthday.json'
 CHANNEL_PATH: str = './botsettings/channelsettings.ini'
 OPEN_MODE: str = ""
@@ -28,6 +28,8 @@ birthday_group = app_commands.Group(name="birthday", description="Birthday Comma
 
 @tasks.loop(time=MIDNIGHT)
 async def happy_birthday() -> None:
+    global MIDNIGHT
+
     now = datetime.now()
     date = now.strftime("%m/%d/%Y")
     month = int(date[:2]) - 1
@@ -40,6 +42,8 @@ async def happy_birthday() -> None:
         user_id = int(user_id)
 
         await BIRTHDAY_CHANNEL.send(f"Happy Birthday, <@{user_id}>!")  # pyright: ignore
+
+    MIDNIGHT = time(0, 0, 0, 0, datetime.now().astimezone().tzinfo)
 
 
 def insert_birthday(month: int, day: int, year: str, user_id: str) -> None:
