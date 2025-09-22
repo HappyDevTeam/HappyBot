@@ -1,3 +1,4 @@
+from typing import Any
 import discord
 from discord import Message
 from discord.ext import commands
@@ -107,7 +108,8 @@ async def tiktok_video_downloader(video_id: str, link: str) -> str:
 
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
-        download_link: str = download_soup.a["href"]  # pyright: ignore
+        html_element: Any = download_soup.find('a', href=True) 
+        download_link: str = html_element['href']
         if len(download_link) < 2:
             return ""
     except TypeError:
