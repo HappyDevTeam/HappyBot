@@ -107,7 +107,7 @@ async def tiktok_video_downloader(video_id: str, link: str) -> str:
 
     download_soup: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     try:
-        download_link: str = download_soup.a["href"]  # pyright: ignore
+        download_link: str  = download_soup.find('a', href=True)["href"]
         if len(download_link) < 2:
             return ""
     except TypeError:
