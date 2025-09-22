@@ -64,50 +64,6 @@ TIKTOK_DOWNLOADER = "https://ssstik.io/abc"
 REEL_DOWNLOADER = "https://reelsvideo.io/reel"
 
 
-def is_valid_tiktok_link(user_input: str) -> bool:
-    if re.search(VALID_TIKTOK_LINK, user_input):
-        return True
-    return False
-
-
-def is_valid_ig_link(user_input: str) -> bool:
-    for link in VALID_INSTAGRAM_LINKS:
-        link_length = len(link)
-        if user_input[:link_length] == link:
-            return True
-    return False
-
-
-async def tiktok_downloader(link: str) -> str:
-    url: str = link
-    if "video" not in link or "photo" not in link:
-        url = requests.get(link).url
-
-    url_split = re.split('[/?&]', url)
-    filename: str = ""
-
-    for index, word in enumerate(url_split):
-        if word == "video":
-            video_id = url_split[index + 1]
-            filename = await video_downloader(video_id, link, TIKTOK_DOWNLOADER, HEADERS_TIKTOK)
-
-    return filename
-
-
-async def reel_downloader(link: str) -> str:
-    url: str = link
-    url_split = re.split('[/?&]', url)
-    filename: str = ""
-
-    for index, word in enumerate(url_split):
-        if word == "reel":
-            video_id = url_split[index + 1]
-            downloader = REEL_DOWNLOADER + "/" + video_id
-            filename = await video_downloader(video_id, link, downloader, HEADERS_REEL)
-
-    return filename
-
-
 async def write_data(filename: str, link: str, headers: Mapping[str, str]) -> str:
     file_path = os.path.join(DIRNAME, f'videos/{filename}.mp4')
     tiktok = requests.get(link, params=PARAMS, headers=headers)
@@ -156,14 +112,65 @@ async def video_downloader(
     return await write_data(video_id, download_link, headers)
 
 
+def is_valid_tiktok_link(user_input: str) -> bool:
+    if re.search(VALID_TIKTOK_LINK, user_input):
+        return True
+    return False
+
+
+def is_valid_ig_link(user_input: str) -> bool:
+    for link in VALID_INSTAGRAM_LINKS:
+        link_length = len(link)
+        if user_input[:link_length] == link:
+            return True
+    return False
+
+
+async def tiktok_downloader(link: str) -> str:
+    url: str = link
+    if "video" not in link or "photo" not in link:
+        url = requests.get(link).url
+
+    url_split = re.split('[/?&]', url)
+    filename: str = ""
+
+    for index, word in enumerate(url_split):
+        if word == "video":
+            video_id = url_split[index + 1]
+            filename = await video_downloader(video_id, link, TIKTOK_DOWNLOADER, HEADERS_TIKTOK)
+
+    return filename
+
+
+async def reel_downloader(link: str) -> str:
+    url: str = link
+    url_split = re.split('[/?&]', url)
+    filename: str = ""
+
+    for index, word in enumerate(url_split):
+        if word == "reel":
+            video_id = url_split[index + 1]
+            downloader = REEL_DOWNLOADER + "/" + video_id
+            filename = await video_downloader(video_id, link, downloader, HEADERS_REEL)
+
+    return filename
+
+
 async def on_message(message: Message) -> None:
     user_input = message.content
     suppress: bool = True
+
     for embed in message.embeds:
         if is_valid_tiktok_link(str(embed.description)):
             user_input = str(embed.description)
             suppress = False
+        if is_valid_ig_link(str(embed.description)):
+            user_input = str(embed.description)
+            suppress = False
+
     if is_valid_tiktok_link(user_input):
+        if not re.search(r'https://', user_input):
+            user_input = "https://" + user_input
         try:
             print("qwktok.py: Detected tiktok link")
             filename = await tiktok_downloader(user_input)
@@ -174,8 +181,10 @@ async def on_message(message: Message) -> None:
             os.remove(filename)
             if suppress:
                 await message.edit(suppress=True)
+            print("qwktok.py: Tiktok downloaded successfully")
         except Exception as e:
             print(e)
+
     if is_valid_ig_link(user_input):
         try:
             print("qwktok.py: Detected reel link")
@@ -187,6 +196,7 @@ async def on_message(message: Message) -> None:
             os.remove(filename)
             if suppress:
                 await message.edit(suppress=True)
+            print("qwktok.py: Reel downloaded successfully")
         except Exception as e:
             print(e)
 
