@@ -1,6 +1,5 @@
 from discord import app_commands, Message, Embed, Member, Interaction, InteractionResponse
 from discord.ext import commands
-from botcommands.qwktok import is_valid_tiktok_link
 
 snipeDataDeleted = {}
 snipeDataEdited = {}
@@ -96,8 +95,6 @@ async def general_snipe(ctx: commands.Context | Interaction, member: Member, dat
         else:
             await response.send_message(attachment.url)  # pyright: ignore
     for embed in message.embeds:
-        if is_valid_tiktok_link(str(embed.description)):
-            return
         if type(response) is commands.Context:
             await response.send(embed.url)
         else:
