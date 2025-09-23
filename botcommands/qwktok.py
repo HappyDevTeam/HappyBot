@@ -42,6 +42,7 @@ async def on_message(message: Message) -> None:
 
     await message.reply(file=discord.File(filename))
     os.remove(filename)
+    await message.edit(suppress=True)
 
 
 @commands.hybrid_command(name="qwktok")
