@@ -155,18 +155,8 @@ async def reel_downloader(link: str) -> str:
 
     return filename
 
-
-async def on_message(message: Message) -> None:
-    user_input = message.content
-    suppress: bool = True
-
-    for embed in message.embeds:
-        if is_valid_tiktok_link(str(embed.description)):
-            user_input = str(embed.description)
-            suppress = False
-        if is_valid_ig_link(str(embed.description)):
-            user_input = str(embed.description)
-            suppress = False
+async def handler(user_input: str) -> str:
+    filename: str = ""
 
     if is_valid_tiktok_link(user_input):
         if not re.search(r'https://', user_input):
@@ -176,11 +166,7 @@ async def on_message(message: Message) -> None:
             filename = await tiktok_downloader(user_input)
             if filename == "":
                 print("qwktok.py: Failed to download tiktok")
-                return
-            await message.reply(file=discord.File(filename))
-            os.remove(filename)
-            if suppress:
-                await message.edit(suppress=True)
+                return ""
             print("qwktok.py: Tiktok downloaded successfully")
         except Exception as e:
             print(e)
@@ -191,25 +177,40 @@ async def on_message(message: Message) -> None:
             filename = await reel_downloader(user_input)
             if filename == "":
                 print("qwktok.py: Failed to download reel")
-                return
-            await message.reply(file=discord.File(filename))
-            os.remove(filename)
-            if suppress:
-                await message.edit(suppress=True)
+                return ""
             print("qwktok.py: Reel downloaded successfully")
         except Exception as e:
             print(e)
+    
+    return filename
+
+async def on_message(message: Message) -> None:
+    user_input = message.content
+    suppress: bool = True
+
+    print("qwktok.py: on_message event, author: ", message.author)
+    for embed in message.embeds:
+        if is_valid_tiktok_link(str(embed.description)):
+            user_input = str(embed.description)
+            suppress = False
+        if is_valid_ig_link(str(embed.description)):
+            user_input = str(embed.description)
+            suppress = False
+    filename: str = await handler(user_input)
+    if (filename == ''):
+        return
+    await message.reply(file=discord.File(filename))
+    os.remove(filename)
+    if suppress:
+        await message.edit(suppress=True)
 
 
 @commands.hybrid_command(name="qwktok")
 async def qwktok(ctx: commands.Context, link: str) -> None:
     try:
-        filename: str = ""
-        if is_valid_tiktok_link(link):
-            filename = await tiktok_downloader(link)
-        if is_valid_ig_link(link):
-            filename = await reel_downloader(link)
-        await ctx.send(file=discord.File(filename))
+        print(link)
+        filename: str = await handler(link)
+        await ctx.channel.send(file=discord.File(filename))
         os.remove(filename)
     except Exception as e:
         await ctx.send("That is an invalid tiktok link.", ephemeral=True)
