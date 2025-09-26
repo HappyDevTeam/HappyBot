@@ -40,7 +40,10 @@ async def on_message(message: Message) -> None:
     if filename == "":
         return
 
-    await message.reply(file=discord.File(filename))
+    await message.reply(
+        file=discord.File(filename),
+        allowed_mentions=discord.AllowedMentions.none()
+    )
     os.remove(filename)
     await message.edit(suppress=True)
 
@@ -53,7 +56,10 @@ async def qwktok(ctx: commands.Context, url: str) -> None:
     if filename == "":
         await ctx.send("Invalid url.", ephemeral=True)
 
-    await ctx.reply(file=discord.File(filename))
+    await ctx.reply(
+        file=discord.File(filename),
+        allowed_mentions=discord.AllowedMentions.none()
+    )
     os.remove(filename)
 
     print(f"qwktok.py: qwktok({url})")
